@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>审批项目订阅 - 喜鹊招标</title>
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+      font-size: 14px; color: #333; background: #f5f6fa; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== Top Bar ===== */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; height: 52px;
+      background: #fff; border-bottom: 1px solid #e8e8e8;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .brand-logo {
+      width: 32px; height: 32px; background: linear-gradient(135deg, #ff7b00, #ff9a44);
+      border-radius: 8px; display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 15px; font-weight: 700; flex-shrink: 0;
+    }
+    .brand-name { font-size: 16px; font-weight: 700; color: #222; letter-spacing: 0.5px; }
+    .menu-toggle {
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border-radius: 6px; transition: background .15s; margin-left: 4px;
+      color: #555;
+    }
+    .menu-toggle:hover { background: #f5f5f5; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .btn-login {
+      padding: 5px 16px; border-radius: 14px; border: none;
+      background: #ff7b00; color: #fff; font-size: 12.5px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-login:hover { background: #e66a00; }
+    .user-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #e0e0e0; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; color: #888; cursor: pointer; overflow: hidden;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ===== Tab Navigation ===== */
+    .tab-nav {
+      display: flex; align-items: center; gap: 2px;
+      padding: 0 20px; height: 40px;
+      background: #fff; border-bottom: 1px solid #e8e8e8;
+      overflow-x: auto; overflow-y: hidden;
+      white-space: nowrap; scrollbar-width: none;
+    }
+    .tab-nav::-webkit-scrollbar { display: none; }
+    .tab-item {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0 12px; height: 28px; border-radius: 14px;
+      font-size: 13px; color: #666; cursor: pointer;
+      transition: all .15s; flex-shrink: 0; border: none; background: transparent;
+      line-height: 28px;
+    }
+    .tab-item:hover { color: #ff7b00; background: #fff6ef; }
+    .tab-item.active {
+      background: #ff7b00; color: #fff; font-weight: 500;
+    }
+    .tab-close {
+      font-size: 11px; opacity: .5; transition: opacity .15s;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%; line-height: 1;
+    }
+    .tab-item:hover .tab-close { opacity: 1; }
+    .tab-item.active .tab-close { opacity: .7; color: #fff; }
+    .tab-close:hover { background: rgba(0,0,0,.1); }
+
+    /* ===== Layout ===== */
+    .layout { display: flex; min-height: calc(100vh - 92px); }
+
+    /* ===== Sidebar ===== */
+    .sidebar {
+      width: 156px; min-width: 156px; background: #fff;
+      border-right: 1px solid #e8e8e8; display: flex; flex-direction: column;
+      padding: 12px 0; overflow-y: auto;
+    }
+    .nav-group-title {
+      font-size: 12px; color: #999; padding: 10px 16px 6px;
+      font-weight: 500; letter-spacing: 0.3px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 16px; cursor: pointer; color: #555;
+      font-size: 13px; transition: all .12s; position: relative;
+      border-left: 3px solid transparent;
+    }
+    .nav-item:hover { background: #fafafa; color: #333; }
+    .nav-item.active {
+      background: #fff6ef; color: #ff7b00; font-weight: 500;
+      border-left-color: #ff7b00;
+    }
+    .nav-icon {
+      width: 16px; height: 16px; flex-shrink: 0; opacity: .75;
+    }
+    .nav-item.active .nav-icon { opacity: 1; }
+
+    /* ===== Main Content ===== */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+    /* Page Header */
+    .page-header {
+      display: flex; align-items: center;
+      padding: 16px 24px; background: #fff; border-bottom: 1px solid #eee;
+    }
+    .page-header-left { display: flex; align-items: center; gap: 10px; }
+    .page-alert-icon {
+      color: #ff7b00; font-size: 16px; font-weight: 700; line-height: 1;
+      flex-shrink: 0;
+    }
+    .page-title { font-size: 17px; font-weight: 700; color: #222; }
+    .time-select {
+      padding: 5px 12px; border: 1px solid #ddd; border-radius: 14px;
+      font-size: 12.5px; color: #555; background: #fff; cursor: pointer;
+      outline: none; transition: border-color .15s;
+    }
+    .time-select:focus { border-color: #ff7b00; }
+    .add-sub-link {
+      font-size: 13px; color: #1677ff; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+      transition: color .15s;
+    }
+    .add-sub-link:hover { color: #0958d9; }
+
+    /* Content Area */
+    .content { flex: 1; overflow-y: auto; padding: 16px 24px; }
+
+    /* ===== Subscription Cards Row ===== */
+    .sub-card-section { margin-bottom: 16px; }
+    .sub-cards-row {
+      display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px;
+      scrollbar-width: thin;
+    }
+    .sub-cards-row::-webkit-scrollbar { height: 4px; }
+    .sub-cards-row::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+    .sub-card {
+      flex-shrink: 0; width: 200px;
+      background: #fff; border: 1px solid #e8e8e8; border-radius: 8px;
+      cursor: pointer; transition: all .18s; position: relative;
+    }
+    .sub-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); border-color: #ccc; }
+    .sub-card.active {
+      border-color: #1677ff; box-shadow: 0 2px 12px rgba(22,119,255,.12);
+    }
+
+    /* Card Header - Blue bar */
+    .sub-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; background: #1677ff; color: #fff;
+      font-size: 13px; font-weight: 600;
+    }
+    .sub-card.active .sub-card-header { background: #1677ff; }
+    .sub-card:not(.active) .sub-card-header { background: #69b1ff; }
+
+    .sub-card-name-wrap { display: flex; align-items: baseline; gap: 4px; }
+    .sub-card-count { font-size: 11.5px; font-weight: 400; opacity: .88; }
+    .sub-card-header-actions { display: flex; align-items: center; gap: 6px; }
+    .header-action-icon {
+      width: 18px; height: 18px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer; border-radius: 4px;
+      font-size: 12px; opacity: .7; transition: opacity .15s;
+    }
+    .header-action-icon:hover { opacity: 1; background: rgba(255,255,255,.15); }
+
+    /* Card Body */
+    .sub-card-body {
+      padding: 10px 12px; display: flex; align-items: center; justify-content: space-between;
+      background: #fff;
+    }
+    .sub-card-keywords-text {
+      font-size: 12.5px; color: #444; flex: 1;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .sub-card-arrow {
+      color: #bbb; font-size: 10px; flex-shrink: 0; margin-left: 6px;
+    }
+
+    /* Add Card */
+    .sub-card-add {
+      flex-shrink: 0; width: 100px;
+      background: #fff; border: 1.5px dashed #d9d9d9; border-radius: 8px;
+      cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+      padding: 18px 10px; color: #aaa; transition: all .18s;
+    }
+    .sub-card-add:hover { border-color: #1677ff; color: #1677ff; background: #f0f7ff; }
+    .add-card-icon { font-size: 22px; line-height: 1; font-weight: 300; }
+    .add-card-label { font-size: 12px; font-weight: 400; }
+
+    /* Tooltip - 挂载到body，不受父容器overflow限制 */
+    .sub-card-tooltip {
+      position: fixed; z-index: 9999;
+      background: #fff; border: 1px solid #e8e8e8; border-radius: 8px;
+      box-shadow: 0 6px 24px rgba(0,0,0,.12);
+      padding: 14px 18px; min-width: 280px; max-width: 420px;
+      opacity: 0; visibility: hidden;
+      transform: translateY(-6px);
+      transition: opacity .2s ease, transform .2s ease, visibility .2s ease;
+      pointer-events: none;
+    }
+    .sub-card-tooltip.tooltip-visible {
+      opacity: 1; visibility: visible; transform: translateY(0);
+      pointer-events: auto;
+    }
+    .tooltip-row {
+      display: flex; gap: 8px; margin-bottom: 9px; font-size: 13px; line-height: 1.7;
+      align-items: flex-start;
+    }
+    .tooltip-row:last-child { margin-bottom: 0; }
+    .tooltip-label { color: #888; white-space: nowrap; min-width: 70px; flex-shrink: 0; font-weight: 500; }
+    .tooltip-value { color: #333; display: flex; flex-wrap: wrap; gap: 4px; word-break: break-all; }
+    .tooltip-tag-inline {
+      display: inline-block; background: #f0f5ff; color: #1677ff;
+      padding: 2px 8px; border-radius: 10px; font-size: 11.5px;
+    }
+    .tooltip-status-on { color: #52c41a; font-weight: 600; }
+    .tooltip-status-off { color: #999; }
+
+    /* ===== Filter Bar ===== */
+    .filter-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .filter-select {
+      padding: 6px 12px; border: 1px solid #ddd; border-radius: 16px;
+      font-size: 12.5px; outline: none; background: #fff; cursor: pointer;
+      color: #555; transition: border-color .15s; height: 34px;
+    }
+    .filter-select:focus { border-color: #1677ff; }
+    .view-toggle-group {
+      display: flex; align-items: center; border: 1px solid #ddd; border-radius: 16px;
+      overflow: hidden; margin-left: auto;
+    }
+    .view-toggle-btn {
+      padding: 6px 14px; font-size: 12.5px; cursor: pointer;
+      background: #fff; color: #666; border: none; border-right: 1px solid #ddd;
+      transition: all .15s; display: flex; align-items: center; gap: 4px;
+      height: 32px;
+    }
+    .view-toggle-btn:last-child { border-right: none; }
+    .view-toggle-btn:hover { color: #1677ff; }
+    .view-toggle-btn.active {
+      background: #1677ff; color: #fff;
+    }
+    .view-toggle-btn.active:hover { background: #0958d9; color: #fff; }
+
+    /* ===== Stats Header Bar ===== */
+    .stats-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; margin-bottom: 0;
+    }
+    .stats-text { font-size: 14px; color: #333; }
+    .stats-count { color: #ff7b00; font-weight: 700; font-size: 15px; }
+    .view-toggle-group {
+      display: flex; align-items: center; border: 1px solid #d9d9d9; border-radius: 6px;
+      overflow: hidden; background: #fff;
+    }
+    .view-toggle-btn {
+      padding: 5px 14px; font-size: 12.5px; cursor: pointer;
+      background: #fff; color: #666; border: none; border-right: 1px solid #d9d9d9;
+      transition: all .15s; display: flex; align-items: center; gap: 4px;
+      height: 32px;
+    }
+    .view-toggle-btn:last-child { border-right: none; }
+    .view-toggle-btn:hover:not(.active) { color: #1677ff; }
+    .view-toggle-btn.active {
+      background: #ff7b00; color: #fff;
+    }
+    .view-toggle-btn.active:hover { background: #e66a00; color: #fff; }
+
+    /* ===== List/Table Wrap ===== */
+    .list-table-wrap {
+      background: #fff; border-radius: 8px;
+      border: 1px solid #eee; overflow: hidden;
+    }
+
+    /* ===== Table View - 匹配参考图2 ===== */
+    .table-view { display: block; }
+    .table-view.hidden { display: none; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    thead th {
+      background: #fafafa; padding: 13px 16px;
+      text-align: left; font-weight: 600; color: #666;
+      border-bottom: 1.5px solid #eee; white-space: nowrap; font-size: 13px;
+    }
+    tbody td {
+      padding: 13px 16px; border-bottom: 1px solid #f2f2f2;
+      vertical-align: middle; color: #444; font-size: 13.5px;
+    }
+    tbody tr:hover { background: #fafbfc; }
+    tbody tr:last-child td { border-bottom: none; }
+    .td-name-cell {
+      max-width: 360px; min-width: 200px;
+    }
+    .td-name-main {
+      font-weight: 600; color: #222;
+      line-height: 1.5; 
+    }
+    .td-invest {
+      color: #ff7b00; font-weight: 600; white-space: nowrap;
+      font-size: 14px;
+    }
+    .td-op-cell { text-align: center; white-space: nowrap; width: 60px; }
+    .fav-heart {
+      cursor: pointer; font-size: 16px; color: #ddd; transition: color .15s;
+      display: inline-block; user-select: none;
+    }
+    .fav-heart:hover { color: #ff7b00; }
+    .fav-heart.favorited { color: #ff7b00; }
+
+    /* ===== List View - 匹配参考图3 ===== */
+    .list-view { display: none; }
+    .list-view.show { display: block; }
+    .list-view.hidden { display: none; }
+    .lv-item {
+      padding: 16px 20px; border-bottom: 1px solid #f2f2f2;
+      cursor: pointer; transition: background .12s;
+      display: block;
+    }
+    .lv-item:last-child { border-bottom: none; }
+    .lv-item:hover { background: #fafbfc; }
+    .lv-title {
+      font-size: 15px; font-weight: 600; color: #222;
+      line-height: 1.5; margin-bottom: 10px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .lv-meta {
+      display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: #888; flex-wrap: wrap;
+    }
+    .lv-tag-stage {
+      display: inline-block; padding: 2px 10px; border-radius: 4px;
+      background: #e6f4ff; color: #1677ff; font-size: 12px; font-weight: 500;
+    }
+    .lv-fav {
+      margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12.5px; color: #999; cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .lv-fav:hover { color: #ff7b00; }
+    .lv-fav.favorited { color: #ff7b00; }
+
+    /* ===== Pagination ===== */
+    .pagination-area {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-top: 1px solid #f5f5f5;
+    }
+    .pagination-info { font-size: 12.5px; color: #999; }
+    .pagination-btns { display: flex; align-items: center; gap: 6px; }
+    .pg-btn {
+      padding: 5px 12px; border: 1px solid #ddd; border-radius: 6px;
+      background: #fff; font-size: 12.5px; color: #555; cursor: pointer;
+      transition: all .12s;
+    }
+    .pg-btn:hover:not(:disabled) { border-color: #1677ff; color: #1677ff; }
+    .pg-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .pg-btn.active { background: #1677ff; color: #fff; border-color: #1677ff; }
+
+    /* ===== Toast ===== */
+    #toast {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      background: rgba(0,0,0,.72); color: #fff; padding: 10px 22px;
+      border-radius: 22px; font-size: 13.5px; z-index: 9999;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ===== Empty State ===== */
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: #bbb;
+    }
+    .empty-state svg { width: 64px; height: 64px; margin-bottom: 12px; opacity: .35; }
+    .empty-text { font-size: 14px; }
+
+    /* Customer Service Float */
+    .cs-float {
+      position: fixed; right: 20px; bottom: 80px; z-index: 90;
+      width: 48px; height: 48px; border-radius: 50%;
+      background: #fff; border: 1px solid #e8e8e8;
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; transition: all .2s;
+    }
+    .cs-float:hover { box-shadow: 0 6px 24px rgba(0,0,0,.12); transform: scale(1.05); }
+    .cs-icon { font-size: 18px; line-height: 1; }
+    .cs-label { font-size: 9px; color: #999; margin-top: 1px; }
+
+    /* ===== Filter Dropdown Trigger ===== */
+    .filter-trigger {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 14px; border: 1px solid #ddd; border-radius: 16px;
+      font-size: 12.5px; outline: none; background: #fff; cursor: pointer;
+      color: #555; transition: border-color .15s; height: 34px;
+      user-select: none; white-space: nowrap;
+    }
+    .filter-trigger:hover { border-color: #ff7b00; color: #ff7b00; }
+    .filter-trigger.active { border-color: #ff7b00; color: #ff7b00; }
+    .filter-trigger .trigger-arrow {
+      font-size: 10px; transition: transform .2s; color: #bbb;
+      margin-left: 2px;
+    }
+    .filter-trigger.active .trigger-arrow { transform: rotate(180deg); }
+
+    /* ===== Dropdown Panel Overlay ===== */
+    .dd-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,.25); z-index: 900;
+      opacity: 0; visibility: hidden; transition: opacity .2s;
+    }
+    .dd-overlay.show { opacity: 1; visibility: visible; }
+
+    /* ===== Dropdown Popup Base ===== */
+    .dd-popup {
+      position: fixed; z-index: 910;
+      background: #fff; border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.12);
+      opacity: 0; visibility: hidden; transform: scale(.96) translateY(-8px);
+      transition: opacity .2s, transform .2s, visibility .2s;
+      min-width: 280px; max-height: 420px; overflow: hidden;
+    }
+    .dd-popup.show { opacity: 1; visibility: visible; transform: scale(1) translateY(0); }
+
+    /* ===== Simple Dropdown (关键词) ===== */
+    .dd-simple { width: 220px; padding: 6px 0; max-height: 320px; overflow-y: auto; }
+    .dd-simple-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 16px; cursor: pointer; font-size: 13.5px; color: #333;
+      transition: background .12s;
+    }
+    .dd-simple-item:hover { background: #fff6ef; color: #ff7b00; }
+    .dd-simple-item.selected { color: #ff7b00; font-weight: 500; }
+    .dd-simple-check { color: #ff7b00; font-size: 13px; flex-shrink: 0; }
+
+    /* ===== Dual Column Popup (地区/行业/阶段) ===== */
+    .dd-dual { width: 520px; display: flex; flex-direction: column; }
+    .dd-dual-body { display: flex; flex: 1; overflow: hidden; }
+
+    /* Left panel */
+    .dd-dual-left {
+      width: 260px; border-right: 1px solid #f0f0f0;
+      overflow-y: auto; flex-shrink: 0;
+    }
+    .dd-list-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; cursor: pointer; font-size: 13.5px; color: #333;
+      transition: background .1s; position: relative;
+    }
+    .dd-list-item:hover { background: #fafafa; }
+    .dd-list-item.selected { background: #fff6ef; color: #ff7b00; }
+    .dd-checkbox {
+      width: 16px; height: 16px; border: 1.5px solid #d9d9d9; border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all .15s; font-size: 11px; color: #fff;
+    }
+    .dd-list-item.selected > .dd-checkbox {
+      background: #ff7b00; border-color: #ff7b00;
+    }
+    .dd-list-item-name { flex: 1; }
+    .dd-list-arrow { color: #bbb; font-size: 11px; flex-shrink: 0; }
+
+    /* Right panel */
+    .dd-dual-right {
+      flex: 1; padding: 12px 16px; background: #fafafa;
+      overflow-y: auto;
+    }
+    .dd-right-header {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 10px; font-size: 13px; color: #666;
+    }
+    .dd-right-header .dd-checkbox { width: 14px; height: 14px; font-size: 10px; }
+    .dd-selected-tag {
+      display: inline-block; background: #fff; border: 1px solid #e8e8e8;
+      padding: 3px 10px; border-radius: 4px; font-size: 12px; color: #333;
+      margin: 0 6px 6px 0; cursor: default;
+    }
+
+    /* Footer buttons */
+    .dd-footer {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 10px; padding: 12px 20px; border-top: 1px solid #f0f0f0;
+      background: #fff; flex-shrink: 0;
+    }
+    .dd-btn-cancel {
+      padding: 6px 22px; border: 1px solid #d9d9d9; border-radius: 4px;
+      background: #fff; color: #666; font-size: 13px; cursor: pointer;
+      transition: all .12s;
+    }
+    .dd-btn-cancel:hover { border-color: #aaa; color: #333; }
+    .dd-btn-reset {
+      padding: 6px 22px; border: 1px solid #ff7b00; border-radius: 4px;
+      background: #fff; color: #ff7b00; font-size: 13px; cursor: pointer;
+      transition: all .12s;
+    }
+    .dd-btn-reset:hover { background: #fff6ef; }
+    .dd-btn-confirm {
+      padding: 6px 24px; border: none; border-radius: 4px;
+      background: #ff7b00; color: #fff; font-size: 13px; cursor: pointer;
+      font-weight: 500; transition: background .15s;
+    }
+    .dd-btn-confirm:hover { background: #e66a00; }
+
+    /* ===== Investment Dropdown (总投资) ===== */
+    .dd-invest { width: 300px; padding: 8px 0; max-height: 380px; overflow-y: auto; }
+    .dd-invest-title {
+      padding: 10px 18px 6px; font-size: 13px; font-weight: 600; color: #ff7b00;
+    }
+    .dd-invest-result {
+      padding: 6px 18px 10px; font-size: 11.5px; color: #999;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .dd-invest-result span { color: #ff7b00; }
+    .dd-invest-item {
+      padding: 10px 18px; cursor: pointer; font-size: 13.5px; color: #333;
+      transition: background .12s; display: flex; align-items: center; justify-content: space-between;
+    }
+    .dd-invest-item:hover { background: #fff6ef; color: #ff7b00; }
+    .dd-invest-item.selected { color: #ff7b00; font-weight: 500; }
+    .dd-invest-custom {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 18px; cursor: pointer; font-size: 13px; color: #555;
+      transition: background .12s;
+    }
+    .dd-invest-custom:hover { background: #fafafa; }
+    .dd-invest-custom-arrow { margin-left: auto; color: #bbb; font-size: 10px; }
+    .dd-invest-input-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 18px 14px; background: #fafafa;
+    }
+    .dd-invest-input-row label { font-size: 13px; color: #888; white-space: nowrap; }
+    .dd-invest-input-row input {
+      flex: 1; height: 30px; border: 1px solid #ddd; border-radius: 4px;
+      padding: 0 8px; font-size: 13px; outline: none; text-align: right;
+      transition: border-color .15s;
+    }
+    .dd-invest-input-row input:focus { border-color: #ff7b00; }
+    .dd-invest-unit { font-size: 13px; color: #888; }
+  </style>
+</head>
+<body>
+
+<!-- ===== Top Bar ===== -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="brand-logo">标</div>
+    <span class="brand-name">喜鹊招标</span>
+    <div class="menu-toggle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-login">企业登录</button>
+    <div class="user-avatar">黎</div>
+  </div>
+</header>
+
+<!-- ===== Tab Navigation ===== -->
+<nav class="tab-nav" id="tabNav">
+  <button class="tab-item">招标订阅<span class="tab-close">×</span></button>
+  <button class="tab-item">信息查询<span class="tab-close">×</span></button>
+  <button class="tab-item active">拟建项目订阅<span class="tab-close">×</span></button>
+  <button class="tab-item">我的导出记录<span class="tab-close">×</span></button>
+  <button class="tab-item">中标结果订阅<span class="tab-close">×</span></button>
+  <button class="tab-item">公告详情<span class="tab-close">×</span></button>
+  <button class="tab-item">数据导出<span class="tab-close">×</span></button>
+  <button class="tab-item">查企业<span class="tab-close">×</span></button>
+  <button class="tab-item">企业详情<span class="tab-close">×</span></button>
+  <button class="tab-item">帮助商机订阅<span class="tab-close">×</span></button>
+  <button class="tab-item">我的收藏<span class="tab-close">×</span></button>
+</nav>
+
+<div class="layout">
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <div class="nav-group-title">订阅中心</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8v2H4zM2 5h12l-1 9H3L2 5z"/><path d="M6 8v4M10 8v4"/></svg>
+      <span>前期商机订阅</span>
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+      <span>实时招标订阅</span>
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M8 2v12"/></svg>
+      <span>中标结果订阅</span>
+    </div>
+
+    <div class="nav-group-title"></div>
+    <div class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M5 7h6M5 10h4"/></svg>
+      <span>审批项目订阅</span>
+    </div>
+
+    <div class="nav-group-title"></div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 3v2m0 6v2M3 8h2m6 0h2"/></svg>
+      <span>信息查询</span>
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 14l-4-4m0 0a4 4 0 110-6 4 4 0 010 6z"/></svg>
+      <span>查企业</span>
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2v12M8 5v7m4-9v11"/></svg>
+      <span>数据导出</span>
+    </div>
+
+    <div class="nav-group-title"></div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a4 4 0 100 8 4 4 0 000-8zm0 0v10m4-4H4"/></svg>
+      <span>我的收藏</span>
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="12" height="10" rx="1"/><path d="M5 4V3a2 2 0 012-2h2a2 2 0 012 2v1"/></svg>
+      <span>我的监控</span>
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8l2 12H2L4 2zM6 6h4M6 9h2"/></svg>
+      <span>我的导出记录</span>
+    </div>
+  </aside>
+
+  <!-- ===== Main Content ===== -->
+  <main class="main">
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="page-header-left">
+        <span class="page-alert-icon">!</span>
+        <h1 class="page-title">审批项目订阅</h1>
+        <select class="time-select">
+          <option>近一个月</option>
+          <option>近三个月</option>
+          <option>近半年</option>
+          <option>近一年</option>
+        </select>
+        <span class="add-sub-link" onclick="window.location.href='approval-subscription.html'">
+          ＋ 添加审批订阅
+        </span>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- 订阅组卡片区 -->
+      <section class="sub-card-section">
+        <div class="sub-cards-row" id="subCardsRow">
+
+          <!-- 卡片1 - Active -->
+          <div class="sub-card active" id="subCard0">
+            <div class="sub-card-header" id="subCardHead0">
+              <div class="sub-card-name-wrap">
+                <span>订阅4</span>
+                <span class="sub-card-count">(130011条)</span>
+              </div>
+              <div class="sub-card-header-actions">
+                <span class="header-action-icon" onclick="event.stopPropagation();window.location.href='approval-subscription.html'" title="编辑">✎</span>
+                <span class="header-action-icon" onclick="event.stopPropagation()" title="复制">⧉</span>
+              </div>
+            </div>
+            <div class="sub-card-body" id="subCardBody0">
+              <span class="sub-card-keywords-text">建筑工程,能源工业,制...</span>
+              <span class="sub-card-arrow">▾</span>
+            </div>
+            <div class="sub-card-tooltip" id="subTooltip0">
+              <div class="tooltip-row"><span class="tooltip-label">关键词：</span><span class="tooltip-value"><span class="tooltip-tag-inline">建筑工程</span><span class="tooltip-tag-inline">能源工业</span><span class="tooltip-tag-inline">制造业</span></span></div>
+              <div class="tooltip-row"><span class="tooltip-label">排除词：</span><span class="tooltip-value" style="color:#999">无</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">搜索范围：</span><span class="tooltip-value">全文搜索</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">搜索模式：</span><span class="tooltip-value">智能匹配</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">地区范围：</span><span class="tooltip-value">全国</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">项目阶段：</span><span class="tooltip-value">立项阶段, 用地预审, 环评阶段</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">项目行业：</span><span class="tooltip-value"><span class="tooltip-tag-inline">建筑工程</span><span class="tooltip-tag-inline">能源工业</span></span></div>
+              <div class="tooltip-row"><span class="tooltip-label">订阅推送：</span><span class="tooltip-value tooltip-status-off">已关闭</span></div>
+            </div>
+          </div>
+
+          <!-- 卡片2 -->
+          <div class="sub-card" id="subCard1">
+            <div class="sub-card-header" id="subCardHead1">
+              <div class="sub-card-name-wrap">
+                <span>订阅3</span>
+                <span class="sub-card-count">(35条)</span>
+              </div>
+              <div class="sub-card-header-actions">
+                <span class="header-action-icon" onclick="event.stopPropagation();window.location.href='approval-subscription.html'" title="编辑">✎</span>
+                <span class="header-action-icon" onclick="event.stopPropagation()" title="复制">⧉</span>
+              </div>
+            </div>
+            <div class="sub-card-body" id="subCardBody1">
+              <span class="sub-card-keywords-text">保障性住房,企业自建...</span>
+              <span class="sub-card-arrow">▾</span>
+            </div>
+            <div class="sub-card-tooltip" id="subTooltip1">
+              <div class="tooltip-row"><span class="tooltip-label">关键词：</span><span class="tooltip-value"><span class="tooltip-tag-inline">保障性住房</span><span class="tooltip-tag-inline">企业自建住宅</span><span class="tooltip-tag-inline">棚户区改造</span></span></div>
+              <div class="tooltip-row"><span class="tooltip-label">排除词：</span><span class="tooltip-value" style="color:#999">无</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">搜索范围：</span><span class="tooltip-value">全文搜索</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">搜索模式：</span><span class="tooltip-value">智能匹配</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">地区范围：</span><span class="tooltip-value">全国</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">项目阶段：</span><span class="tooltip-value">立项阶段, 用地预审, 环评阶段</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">项目行业：</span><span class="tooltip-value"><span class="tooltip-tag-inline">保障性住房</span><span class="tooltip-tag-inline">棚户区改造</span></span></div>
+              <div class="tooltip-row"><span class="tooltip-label">订阅推送：</span><span class="tooltip-value tooltip-status-off">已关闭</span></div>
+            </div>
+          </div>
+
+          <!-- 卡片3 -->
+          <div class="sub-card" id="subCard2">
+            <div class="sub-card-header" id="subCardHead2">
+              <div class="sub-card-name-wrap">
+                <span>订阅2</span>
+                <span class="sub-card-count">(8861条)</span>
+              </div>
+              <div class="sub-card-header-actions">
+                <span class="header-action-icon" onclick="event.stopPropagation();window.location.href='approval-subscription.html'" title="编辑">✎</span>
+                <span class="header-action-icon" onclick="event.stopPropagation()" title="复制">⧉</span>
+              </div>
+            </div>
+            <div class="sub-card-body" id="subCardBody2">
+              <span class="sub-card-keywords-text">住宅,综合商业体,零售...</span>
+              <span class="sub-card-arrow">▾</span>
+            </div>
+            <div class="sub-card-tooltip" id="subTooltip2">
+              <div class="tooltip-row"><span class="tooltip-label">关键词：</span><span class="tooltip-value"><span class="tooltip-tag-inline">住宅</span><span class="tooltip-tag-inline">综合商业体</span><span class="tooltip-tag-inline">零售</span></span></div>
+              <div class="tooltip-row"><span class="tooltip-label">排除词：</span><span class="tooltip-value" style="color:#999">无</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">搜索范围：</span><span class="tooltip-value">全文搜索</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">搜索模式：</span><span class="tooltip-value">智能匹配</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">地区范围：</span><span class="tooltip-value">广东省</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">项目阶段：</span><span class="tooltip-value">施工准备, 施工在建</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">项目行业：</span><span class="tooltip-value"><span class="tooltip-tag-inline">住宅</span><span class="tooltip-tag-inline">综合商业体</span></span></div>
+              <div class="tooltip-row"><span class="tooltip-label">订阅推送：</span><span class="tooltip-value tooltip-status-on">已开启</span></div>
+            </div>
+          </div>
+
+          <!-- 卡片4 -->
+          <div class="sub-card" id="subCard3">
+            <div class="sub-card-header" id="subCardHead3">
+              <div class="sub-card-name-wrap">
+                <span>订阅1</span>
+                <span class="sub-card-count">(1411条)</span>
+              </div>
+              <div class="sub-card-header-actions">
+                <span class="header-action-icon" onclick="event.stopPropagation();window.location.href='approval-subscription.html'" title="编辑">✎</span>
+                <span class="header-action-icon" onclick="event.stopPropagation()" title="复制">⧉</span>
+              </div>
+            </div>
+            <div class="sub-card-body" id="subCardBody3">
+              <span class="sub-card-keywords-text">商品房,高档住宅</span>
+              <span class="sub-card-arrow">▾</span>
+            </div>
+            <div class="sub-card-tooltip" id="subTooltip3">
+              <div class="tooltip-row"><span class="tooltip-label">关键词：</span><span class="tooltip-value"><span class="tooltip-tag-inline">商品房</span><span class="tooltip-tag-inline">高档住宅</span></span></div>
+              <div class="tooltip-row"><span class="tooltip-label">排除词：</span><span class="tooltip-value" style="color:#999">无</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">搜索范围：</span><span class="tooltip-value">全文搜索</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">搜索模式：</span><span class="tooltip-value">智能匹配</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">地区范围：</span><span class="tooltip-value">全国</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">项目阶段：</span><span class="tooltip-value">全部阶段</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">项目行业：</span><span class="tooltip-value">全部行业</span></div>
+              <div class="tooltip-row"><span class="tooltip-label">订阅推送：</span><span class="tooltip-value tooltip-status-on">已开启</span></div>
+            </div>
+          </div>
+
+          <!-- 添加卡片 -->
+          <div class="sub-card-add" onclick="window.location.href='approval-subscription.html'">
+            <div class="add-card-icon">＋</div>
+            <div class="add-card-label">添加订阅</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 筛选栏 -->
+      <div class="filter-row">
+        <div class="filter-trigger" id="triggerKeyword" onclick="openDropdown('keyword')">
+          全部订阅词<span class="trigger-arrow">▾</span>
+        </div>
+        <div class="filter-trigger" id="triggerIndustry" onclick="openDropdown('industry')">
+          全部行业<span class="trigger-arrow">▾</span>
+        </div>
+        <div class="filter-trigger" id="triggerStage" onclick="openDropdown('stage')">
+          全部阶段<span class="trigger-arrow">▾</span>
+        </div>
+        <div class="filter-trigger" id="triggerRegion" onclick="openDropdown('region')">
+          全国<span class="trigger-arrow">▾</span>
+        </div>
+        <div class="filter-trigger" id="triggerInvest" onclick="openDropdown('invest')">
+          全部总投资<span class="trigger-arrow">▾</span>
+        </div>
+      </div>
+
+      <!-- ===== 弹窗遮罩层 ===== -->
+      <div class="dd-overlay" id="ddOverlay" onclick="closeDropdown()"></div>
+
+      <!-- ===== 关键词下拉弹窗 ===== -->
+      <div class="dd-popup dd-simple" id="ddKeyword">
+        <div class="dd-simple-item selected" data-val="" onclick="selectKeyword(this)">全部订阅词<span class="dd-simple-check">✓</span></div>
+        <div class="dd-simple-item" data-val="住房" onclick="selectKeyword(this)">住房</div>
+        <div class="dd-simple-item" data-val="小区" onclick="selectKeyword(this)">小区</div>
+        <div class="dd-simple-item" data-val="住宅" onclick="selectKeyword(this)">住宅</div>
+        <div class="dd-simple-item" data-val="建筑工程" onclick="selectKeyword(this)">建筑工程</div>
+        <div class="dd-simple-item" data-val="保障性住房" onclick="selectKeyword(this)">保障性住房</div>
+        <div class="dd-simple-item" data-val="商品房" onclick="selectKeyword(this)">商品房</div>
+        <div class="dd-simple-item" data-var="能源工业" onclick="selectKeyword(this)">能源工业</div>
+        <div class="dd-simple-item" data-val="制造业" onclick="selectKeyword(this)">制造业</div>
+        <div class="dd-simple-item" data-val="物业" onclick="selectKeyword(this)">物业</div>
+      </div>
+
+      <!-- ===== 地区双栏弹窗 ===== -->
+      <div class="dd-popup dd-dual" id="ddRegion">
+        <div class="dd-dual-body">
+          <div class="dd-dual-left" id="ddRegionLeft">
+            <!-- JS动态渲染 -->
+          </div>
+          <div class="dd-dual-right">
+            <div class="dd-right-header"><span class="dd-checkbox selected">✓</span><span id="ddRegionRightTitle">全国</span></div>
+            <div id="ddRegionSelected"></div>
+          </div>
+        </div>
+        <div class="dd-footer">
+          <button class="dd-btn-cancel" onclick="closeDropdown()">取消</button>
+          <button class="dd-btn-confirm" onclick="confirmRegion()">确定</button>
+        </div>
+      </div>
+
+      <!-- ===== 行业双栏弹窗 ===== -->
+      <div class="dd-popup dd-dual" id="ddIndustry">
+        <div class="dd-dual-body">
+          <div class="dd-dual-left" id="ddIndustryLeft">
+            <!-- JS动态渲染 -->
+          </div>
+          <div class="dd-dual-right">
+            <div class="dd-right-header"><span class="dd-checkbox selected">✓</span><span id="ddIndustryRightTitle">全部行业</span></div>
+            <div id="ddIndustrySelected"></div>
+          </div>
+        </div>
+        <div class="dd-footer">
+          <button class="dd-btn-cancel" onclick="closeDropdown()">取消</button>
+          <button class="dd-btn-reset" onclick="resetIndustry()">重置</button>
+          <button class="dd-btn-confirm" onclick="confirmIndustry()">确定</button>
+        </div>
+      </div>
+
+      <!-- ===== 项目阶段双栏弹窗 ===== -->
+      <div class="dd-popup dd-dual" id="ddStage">
+        <div class="dd-dual-body">
+          <div class="dd-dual-left" id="ddStageLeft">
+            <!-- JS动态渲染 -->
+          </div>
+          <div class="dd-dual-right">
+            <div class="dd-right-header"><span class="dd-checkbox selected">✓</span><span id="ddStageRightTitle">全部阶段</span></div>
+            <div id="ddStageSelected"></div>
+          </div>
+        </div>
+        <div class="dd-footer">
+          <button class="dd-btn-cancel" onclick="closeDropdown()">取消</button>
+          <button class="dd-btn-reset" onclick="resetStage()">重置</button>
+          <button class="dd-btn-confirm" onclick="confirmStage()">确定</button>
+        </div>
+      </div>
+
+      <!-- ===== 总投资下拉弹窗 ===== -->
+      <div class="dd-popup dd-invest" id="ddInvest">
+        <div class="dd-invest-item selected" data-val="" onclick="selectInvestItem(this, false)">全部金额<span class="dd-simple-check">✓</span></div>
+        <div class="dd-invest-item" data-val="10万以内" onclick="selectInvestItem(this, false)">10万以内</div>
+        <div class="dd-invest-item" data-val="10万-50万元" onclick="selectInvestItem(this, false)">10万-50万元</div>
+        <div class="dd-invest-item" data-val="50万-100万元" onclick="selectInvestItem(this, false)">50万-100万元</div>
+        <div class="dd-invest-item" data-val="100万-500万元" onclick="selectInvestItem(this, false)">100万-500万元</div>
+        <div class="dd-invest-item" data-val="500万-1000万元" onclick="selectInvestItem(this, false)">500万-1000万元</div>
+        <div class="dd-invest-item" data-val="1000万-5000万元" onclick="selectInvestItem(this, false)">1000万-5000万元</div>
+        <div class="dd-invest-item" data-val="5000万元以上" onclick="selectInvestItem(this, false)">5000万元以上</div>
+        <div class="dd-invest-custom" onclick="toggleCustomInvest()">
+          自定义金额<span class="dd-invest-custom-arrow" id="customInvestArrow">▸</span>
+        </div>
+        <div class="dd-invest-input-row" id="customInvestRow" style="display:none">
+          <label>从</label>
+          <input type="text" placeholder="请输入金额" id="investMin">
+          <span class="dd-invest-unit">万</span>
+          <label>至</label>
+          <input type="text" placeholder="请输入金额" id="investMax">
+          <span class="dd-invest-unit">万</span>
+        </div>
+        <div style="padding:8px 18px 12px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #f0f0f0;margin-top:4px">
+          <button class="dd-btn-cancel" onclick="closeDropdown()" style="font-size:12px;padding:5px 16px">取消</button>
+          <button class="dd-btn-confirm" onclick="confirmInvest()" style="font-size:12px;padding:5px 18px">确定</button>
+        </div>
+      </div>
+
+      <!-- 统计头部栏 + 视图切换 -->
+      <div class="stats-header">
+        <div class="stats-text">共为您找到 <span class="stats-count" id="totalCount">10000+</span> 条信息</div>
+        <div class="view-toggle-group">
+          <button class="view-toggle-btn" id="btnListView" onclick="switchView('list')">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h8M2 12h5"/></svg>
+            列表展示
+          </button>
+          <button class="view-toggle-btn active" id="btnTableView" onclick="switchView('table')">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M6 3v10M2 8h12"/></svg>
+            表格展示
+          </button>
+        </div>
+      </div>
+
+      <!-- 列表/表格 -->
+      <div class="list-table-wrap">
+
+        <!-- 表格视图（默认） -->
+        <div class="table-view" id="tableView">
+          <table>
+            <thead>
+              <tr>
+                <th>项目名称</th>
+                <th style="width:100px">项目阶段</th>
+                <th style="width:180px">项目行业</th>
+                <th style="width:80px">总投资</th>
+                <th style="width:90px">地区</th>
+                <th style="width:110px">发布时间</th>
+                <th style="width:60px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+
+          <!-- 分页 -->
+          <div class="pagination-area" id="paginationArea">
+            <div class="pagination-info">共 <strong id="totalCountInner">10000+</strong> 条记录</div>
+            <div class="pagination-btns" id="paginationBtns"></div>
+          </div>
+        </div>
+
+        <!-- 列表视图 -->
+        <div class="list-view" id="listView"></div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- 客服悬浮按钮 -->
+<div class="cs-float" title="在线客服">
+  <span class="cs-icon">🎧</span>
+  <span class="cs-label">客服</span>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ===== Mock Data - 匹配参考图 =====
+const MOCK_DATA = [
+  { name: '2026年赣州移动5G2.6GHz室外基站第二批工程', stage: '环境影响', industry: '其他', invest: '8.38万元', region: '江西·赣州', time: '2026-05-20' },
+  { name: '叶桂宁中医诊所', stage: '环境影响', industry: '其他', invest: '3.00万元', region: '', time: '2026-05-20' },
+  { name: '四川移动2026年眉山5G八期提前批室分室外无 线网设备安装工程', stage: '环境影响', industry: '公路/道路、通信工程、商品房', invest: '6.38万元', region: '四川·眉山', time: '2026-05-20' },
+  { name: '新增一台双能x射线骨密度仪', stage: '环境影响', industry: '医疗仪器设备及器械制造', invest: '8.50万元', region: '', time: '2026-05-20' },
+  { name: '泉水镇横流村委罗宁侗黄家义养殖场', stage: '环境影响', industry: '养殖', invest: '3.00万元', region: '', time: '2026-05-20' },
+  { name: '东莞市中堂镇莫兆华内陆养殖项目', stage: '环境影响', industry: '养殖', invest: '3.00万元', region: '广东·东莞', time: '2026-05-20' },
+  { name: '广西贵港市港北区港城街道富岭村平田水库渔业养殖项目', stage: '环境影响', industry: '养殖、水库工程', invest: '9.00万元', region: '广西·贵港', time: '2026-05-20' },
+  { name: '内黄县安乡乡海峰诊所使用三类射线装置项目', stage: '环境影响', industry: '医疗仪器设备及器械制造', invest: '2.00万元', region: '河南·内黄', time: '2026-05-20' },
+  { name: '河北熠轩业有限公司废气治理设施改造项目', stage: '环境影响', industry: '废气处理', invest: '3.00万元', region: '', time: '2026-05-20' },
+  { name: '河北华药业创制有限公司废气治理设施改造项目', stage: '环境影响', industry: '废气处理', invest: '3.00万元', region: '', time: '2026-05-20' },
+];
+
+let currentPage = 1;
+const pageSize = 10;
+const totalPages = Math.ceil(MOCK_DATA.length / pageSize);
+const favorites = new Set();
+let isTableView = true;
+
+// ===== 渲染表格视图 - 匹配参考图2 =====
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const start = (currentPage - 1) * pageSize;
+  const pageData = MOCK_DATA.slice(start, start + pageSize);
+
+  tbody.innerHTML = pageData.map((row, i) => {
+    const idx = start + i;
+    const favClass = favorites.has(idx) ? 'favorited' : '';
+    return `<tr>
+      <td class="td-name-cell">
+        <div class="td-name-main">${row.name}</div>
+      </td>
+      <td>${row.stage}</td>
+      <td>${row.industry}</td>
+      <td class="td-invest">${row.invest || '-'}</td>
+      <td>${row.region || '-'}</td>
+      <td>${row.time}</td>
+      <td class="td-op-cell"><span class="fav-heart ${favClass}" data-idx="${idx}" onclick="toggleFav(this)">♡</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== 渲染列表视图 - 匹配参考图3 =====
+function renderList() {
+  const container = document.getElementById('listView');
+  const start = (currentPage - 1) * pageSize;
+  const pageData = MOCK_DATA.slice(start, start + pageSize);
+
+  container.innerHTML = pageData.map((row, i) => {
+    const idx = start + i;
+    const favClass = favorites.has(idx) ? 'favorited' : '';
+    return `<div class="lv-item">
+      <div class="lv-title">${row.name}</div>
+      <div class="lv-meta">
+        <span class="lv-tag-stage">${row.stage}</span>
+        ${row.region ? `<span>${row.region}</span>` : ''}
+        <span>${row.industry}</span>
+        ${row.invest ? `<span style="color:#ff7b00;font-weight:600">${row.invest}</span>` : ''}
+        ${row.time ? `<span>${row.time}</span>` : ''}
+        <span class="lv-fav ${favClass}" data-idx="${idx}" onclick="toggleFav(this)">
+          ♡ 收藏
+        </span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== 视图切换 =====
+function switchView(mode) {
+  isTableView = (mode === 'table');
+  const btnList = document.getElementById('btnListView');
+  const btnTable = document.getElementById('btnTableView');
+  const tv = document.getElementById('tableView');
+  const lv = document.getElementById('listView');
+
+  if (isTableView) {
+    btnList.classList.remove('active'); btnTable.classList.add('active');
+    tv.classList.remove('hidden'); lv.classList.remove('show'); lv.classList.add('hidden');
+    tv.style.display = 'block'; lv.style.display = 'none';
+    renderTable();
+  } else {
+    btnTable.classList.remove('active'); btnList.classList.add('active');
+    lv.classList.remove('hidden'); lv.classList.add('show'); tv.classList.add('hidden');
+    lv.style.display = 'block'; tv.style.display = 'none';
+    renderList();
+  }
+}
+
+// ===== 分页 =====
+function renderPagination() {
+  const btns = document.getElementById('paginationBtns');
+  let html = `<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>‹ 上一页</button>`;
+  for (let p=1;p<=totalPages;p++) {
+    html += `<button class="pg-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  html += `<button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>下一页 ›</button>`;
+  btns.innerHTML = html;
+}
+
+function goPage(p) {
+  if(p<1||p>totalPages)return;
+  currentPage=p;
+  if(isTableView)renderTable();else renderList();
+  renderPagination();
+}
+
+// ===== 收藏 =====
+function toggleFav(el) {
+  const idx=parseInt(el.dataset.idx);
+  if(favorites.has(idx)){favorites.delete(idx);el.classList.remove('favorited')}
+  else{favorites.add(idx);el.classList.add('favorited')}
+  // 同步刷新当前视图
+  if(isTableView) renderTable(); else renderList();
+}
+
+// ===== Toast =====
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+// ===== 订阅卡片 Tooltip - 挂载到body，不受父容器overflow限制 =====
+(function initSubCardTooltips(){
+  const tooltipData = [
+    {
+      keywords: ['建筑工程', '能源工业', '制造业'],
+      exclude: '无',
+      searchScope: '全文搜索',
+      searchMode: '智能匹配',
+      region: '全国',
+      stage: '立项阶段, 用地预审, 环评阶段',
+      industry: ['建筑工程', '能源工业'],
+      pushStatus: 'off'
+    },
+    {
+      keywords: ['保障性住房', '企业自建住宅', '棚户区改造'],
+      exclude: '无',
+      searchScope: '全文搜索',
+      searchMode: '智能匹配',
+      region: '全国',
+      stage: '立项阶段, 用地预审, 环评阶段',
+      industry: ['保障性住房', '棚户区改造'],
+      pushStatus: 'off'
+    },
+    {
+      keywords: ['住宅', '综合商业体', '零售'],
+      exclude: '无',
+      searchScope: '全文搜索',
+      searchMode: '智能匹配',
+      region: '广东省',
+      stage: '施工准备, 施工在建',
+      industry: ['住宅', '综合商业体'],
+      pushStatus: 'on'
+    },
+    {
+      keywords: ['商品房', '高档住宅'],
+      exclude: '无',
+      searchScope: '全文搜索',
+      searchMode: '智能匹配',
+      region: '全国',
+      stage: '全部阶段',
+      industry: '全部行业',
+      pushStatus: 'on'
+    }
+  ];
+
+  // 创建全局唯一的tooltip元素挂载到body
+  const tipEl = document.createElement('div');
+  tipEl.className = 'sub-card-tooltip';
+  document.body.appendChild(tipEl);
+
+  let hideTimer = null;
+  let currentIdx = -1;
+
+  function renderTooltipContent(data) {
+    const kwTags = Array.isArray(data.keywords)
+      ? data.keywords.map(k => `<span class="tooltip-tag-inline">${k}</span>`).join('')
+      : data.keywords || '';
+    const indTags = Array.isArray(data.industry)
+      ? data.industry.map(i => `<span class="tooltip-tag-inline">${i}</span>`).join('')
+      : (data.industry || '');
+    const statusClass = data.pushStatus === 'on' ? 'tooltip-status-on' : 'tooltip-status-off';
+    const statusText = data.pushStatus === 'on' ? '已开启' : '已关闭';
+
+    tipEl.innerHTML = `
+      <div class="tooltip-row"><span class="tooltip-label">关键词：</span><span class="tooltip-value">${kwTags}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">排除词：</span><span class="tooltip-value" style="color:#999">${data.exclude || '无'}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">搜索范围：</span><span class="tooltip-value">${data.searchScope || '-'}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">搜索模式：</span><span class="tooltip-value">${data.searchMode || '-'}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">地区范围：</span><span class="tooltip-value">${data.region || '-'}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">项目阶段：</span><span class="tooltip-value">${data.stage || '-'}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">项目行业：</span><span class="tooltip-value">${indTags || '-'}</span></div>
+      <div class="tooltip-row"><span class="tooltip-label">订阅推送：</span><span class="tooltip-value ${statusClass}">${statusText}</span></div>
+    `;
+  }
+
+  function positionTooltip(bodyRect) {
+    let top = bodyRect.bottom + window.scrollY + 8;
+    let left = bodyRect.left + window.scrollX;
+    // 防止超出右边界
+    const tipWidth = 420;
+    if (left + tipWidth > window.innerWidth) {
+      left = window.innerWidth - tipWidth - 12;
+    }
+    // 防止超出下边界 - 翻转到上方显示
+    if (top + 250 > window.innerHeight + window.scrollY) {
+      top = bodyRect.top + window.scrollY - 260;
+    }
+    tipEl.style.top = top + 'px';
+    tipEl.style.left = left + 'px';
+  }
+
+  function showTooltip(idx, bodyEl) {
+    clearTimeout(hideTimer);
+    currentIdx = idx;
+    if (idx >= 0 && idx < tooltipData.length) {
+      renderTooltipContent(tooltipData[idx]);
+    }
+    const rect = bodyEl.getBoundingClientRect();
+    positionTooltip(rect);
+    tipEl.classList.add('tooltip-visible');
+  }
+
+  function hideTooltip() {
+    hideTimer = setTimeout(() => {
+      tipEl.classList.remove('tooltip-visible');
+      currentIdx = -1;
+    }, 150);
+  }
+
+  document.querySelectorAll('.sub-card').forEach((card, idx) => {
+    const body = card.querySelector('.sub-card-body');
+    if (!body) return;
+    body.addEventListener('mouseenter', () => showTooltip(idx, body));
+    body.addEventListener('mouseleave', hideTooltip);
+  });
+
+  // tooltip自身鼠标事件保持显示
+  tipEl.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+  tipEl.addEventListener('mouseleave', hideTooltip);
+})();
+
+// ===== 筛选下拉弹窗系统 =====
+const PROVINCES = [
+  { name:'全国', children:[] },
+  { name:'北京', children:['北京'] }, { name:'广东', children:['广州','深圳','东莞','佛山','珠海','中山','惠州','江门','湛江','汕头','茂名'] },
+  { name:'海南', children:['海口','三亚','儋州'] },
+  { name:'广西', children:['南宁','柳州','桂林','北海','玉林'] },
+  { name:'天津', children:['天津'] },
+  { name:'河北', children:['石家庄','唐山','保定','邯郸','廊坊'] },
+  { name:'山西', children:['太原','大同','长治','临汾'] },
+  { name:'内蒙古', children:['呼和浩特','包头','鄂尔多斯'] },
+  { name:'辽宁', children:['沈阳','大连','鞍山','抚顺'] },
+  { name:'吉林', children:['长春','吉林','四平'] },
+  { name:'黑龙江', children:['哈尔滨','大庆','齐齐哈尔'] },
+  { name:'上海', children:['上海'] },
+  { name:'江苏', children:['南京','苏州','无锡','常州','南通','徐州'] },
+  { name:'浙江', children:['杭州','宁波','温州','嘉兴','绍兴'] },
+  { name:'安徽', children:['合肥','芜湖','蚌埠','安庆'] },
+  { name:'福建', children:['福州','厦门','泉州','漳州'] },
+  { name:'江西', children:['南昌','赣州','九江','上饶'] },
+  { name:'山东', children:['济南','青岛','烟台','潍坊','临沂'] },
+  { name:'河南', children:['郑州','洛阳','南阳','新乡','安阳'] },
+  { name:'湖北', children:['武汉','襄阳宜昌','荆州','黄冈'] },
+  { name:'湖南', children:['长沙','株洲','湘潭','衡阳'] },
+  { name:'重庆', children:['重庆'] },
+  { name:'四川', children:['成都','绵阳','德阳','宜宾','南充'] },
+  { name:'贵州', children:['贵阳','遵义','六盘水'] },
+  { name:'云南', children:['昆明','大理','曲靖','丽江'] },
+  { name:'西藏', children:['拉萨','日喀则'] },
+  { name:'陕西', children:['西安','咸阳','宝鸡','渭南'] },
+  { name:'甘肃', children:['兰州','天水','酒泉'] },
+  { name:'青海', children:['西宁'] },
+  { name:'宁夏', children:['银川','石嘴山'] },
+  { name:'新疆', children:['乌鲁木齐','喀什','伊犁'] },
+];
+
+const INDUSTRIES = [
+  { name:'全部行业' }, { name:'建筑工程' }, { name:'能源工业' }, { name:'制造业' },
+  { name:'仓储物流' }, { name:'市政工程' }, { name:'交通运输' }, { name:'农林水利' },
+  { name:'住宅' }, { name:'综合商业体' }, { name:'医疗仪器设备及器械制造' },
+  { name:'废气处理' }, { name:'养殖' }, { name:'其他' },
+];
+
+const STAGES = [
+  { name:'全部阶段' }, { name:'工程筹备' }, { name:'债券发行' }, { name:'设计阶段' },
+  { name:'施工准备' }, { name:'总承包' }, { name:'施工在建' }, { name:'装饰装修' },
+  { name:'立项阶段' }, { name:'用地预审' }, { name:'环评阶段' }, { name:'环境影响' },
+  { name:'工程规划' }, { name:'环评审批' }, { name:'施工许可' },
+];
+
+const INVEST_OPTIONS = ['10万以内','10万-50万元','50万-100万元','100万-500万元','500万-1000万元','1000万-5000万元','5000万元以上'];
+
+let currentDropdown = null;
+let filterState = {
+  keyword: '',
+  industry: [],
+  stage: [],
+  region: [], // []=全国, 有值=具体省份
+  invest: ''
+};
+
+function openDropdown(type) {
+  closeDropdown();
+  currentDropdown = type;
+  const overlay = document.getElementById('ddOverlay');
+  const popup = document.getElementById('dd' + type.charAt(0).toUpperCase() + type.slice(1));
+  const trigger = document.getElementById('trigger' + type.charAt(0).toUpperCase() + type.slice(1));
+  if (!popup || !trigger) return;
+
+  overlay.classList.add('show');
+  popup.classList.add('show');
+  trigger.classList.add('active');
+
+  // 定位
+  const rect = trigger.getBoundingClientRect();
+  if (type === 'keyword') {
+    popup.style.top = (rect.bottom + 4) + 'px';
+    popup.style.left = rect.left + 'px';
+  } else if (type === 'invest') {
+    popup.style.top = (rect.bottom + 4) + 'px';
+    popup.style.left = Math.max(8, rect.right - popup.offsetWidth) + 'px';
+  } else {
+    // 双栏弹窗居中偏左
+    const w = 520;
+    let left = rect.left + rect.width / 2 - w / 2;
+    if (left < 8) left = 8;
+    if (left + w > window.innerWidth - 8) left = window.innerWidth - w - 8;
+    popup.style.top = (rect.bottom + 4) + 'px';
+    popup.style.left = left + 'px';
+  }
+
+  // 初始化内容
+  if (type === 'region') renderRegionList();
+  if (type === 'industry') renderIndustryList();
+  if (type === 'stage') renderStageList();
+}
+
+function closeDropdown() {
+  if (!currentDropdown) return;
+  document.getElementById('ddOverlay').classList.remove('show');
+  document.querySelectorAll('.dd-popup').forEach(p => p.classList.remove('show'));
+  document.querySelectorAll('.filter-trigger').forEach(t => t.classList.remove('active'));
+  currentDropdown = null;
+}
+
+// ---- 关键词弹窗 ----
+function selectKeyword(el) {
+  document.querySelectorAll('#ddKeyword .dd-simple-item').forEach(item => {
+    item.classList.remove('selected');
+    const c = item.querySelector('.dd-simple-check');
+    if (c) c.remove();
+  });
+  el.classList.add('selected');
+  el.innerHTML += '<span class="dd-simple-check">✓</span>';
+  filterState.keyword = el.dataset.val || '';
+}
+// 点击关键词项后自动关闭并确认
+document.addEventListener('click', function(e) {
+  if (!currentDropdown || currentDropdown !== 'keyword') return;
+  const item = e.target.closest('#ddKeyword .dd-simple-item');
+  if (item) {
+    selectKeyword(item);
+    const trigger = document.getElementById('triggerKeyword');
+    const text = item.textContent.trim().replace(/✓/,'').trim();
+    trigger.innerHTML = text + '<span class="trigger-arrow">▾</span>';
+    setTimeout(closeDropdown, 150);
+  }
+});
+
+// ---- 地区双栏弹窗 ----
+let tempRegionState = [];
+function renderRegionList() {
+  tempRegionState = filterState.region.length ? [...filterState.region] : [];
+  const container = document.getElementById('ddRegionLeft');
+  container.innerHTML = PROVINCES.map((p, i) => {
+    const isAll = i === 0;
+    const selected = isAll ? tempRegionState.length === 0 : tempRegionState.includes(p.name);
+    return `<div class="dd-list-item ${selected?'selected':''}" data-pidx="${i}" onclick="toggleRegionItem(${i})">
+      <span class="dd-checkbox">${selected?'✓':''}</span>
+      <span class="dd-list-item-name">${p.name}</span>
+      <span class="dd-list-arrow">${p.children.length?'▸':''}</span>
+    </div>`;
+  }).join('');
+  updateRegionRight();
+}
+
+function toggleRegionItem(idx) {
+  if (idx === 0) {
+    // 全国 - 清空所有选择
+    tempRegionState = [];
+  } else {
+    const name = PROVINCES[idx].name;
+    const pos = tempRegionState.indexOf(name);
+    if (pos >= 0) tempRegionState.splice(pos, 1);
+    else tempRegionState.push(name);
+  }
+  // 更新左侧列表选中状态
+  renderRegionList();
+}
+
+function updateRegionRight() {
+  const titleEl = document.getElementById('ddRegionRightTitle');
+  const selEl = document.getElementById('ddRegionSelected');
+  if (tempRegionState.length === 0) {
+    titleEl.textContent = '全国';
+    selEl.innerHTML = '';
+  } else {
+    titleEl.textContent = `已选${tempRegionState.length}个地区`;
+    selEl.innerHTML = tempRegionState.map(r =>
+      `<span class="dd-selected-tag">${r}</span>`
+    ).join('');
+  }
+}
+
+function confirmRegion() {
+  filterState.region = [...tempRegionState];
+  const trigger = document.getElementById('triggerRegion');
+  if (filterState.region.length === 0) {
+    trigger.innerHTML = '全国<span class="trigger-arrow">▾</span>';
+  } else {
+    trigger.innerHTML = filterState.region.join(',') + '<span class="trigger-arrow">▾</span>';
+  }
+  closeDropdown();
+}
+
+// ---- 行业双栏弹窗 ----
+let tempIndustryState = [];
+function renderIndustryList() {
+  tempIndustryState = filterState.industry.length ? [...filterState.industry] : ['全部行业'];
+  const container = document.getElementById('ddIndustryLeft');
+  container.innerHTML = INDUSTRIES.map((item, i) => {
+    const selected = tempIndustryState.includes(item.name);
+    return `<div class="dd-list-item ${selected?'selected':''}" data-iidx="${i}" onclick="toggleIndustryItem(${i})">
+      <span class="dd-checkbox">${selected?'✓':''}</span>
+      <span class="dd-list-item-name">${item.name}</span>
+      <span class="dd-list-arrow">▸</span>
+    </div>`;
+  }).join('');
+  updateIndustryRight();
+}
+
+function toggleIndustryItem(idx) {
+  const name = INDUSTRIES[idx].name;
+  if (idx === 0) {
+    // 全部行业 - 只保留全部
+    tempIndustryState = ['全部行业'];
+  } else {
+    // 取消全部行业，切换到多选
+    tempIndustryState = tempIndustryState.filter(n => n !== '全部行业');
+    const pos = tempIndustryState.indexOf(name);
+    if (pos >= 0) tempIndustryState.splice(pos, 1);
+    else tempIndustryState.push(name);
+  }
+  renderIndustryList();
+}
+
+function updateIndustryRight() {
+  const titleEl = document.getElementById('ddIndustryRightTitle');
+  const selEl = document.getElementById('ddIndustrySelected');
+  if (tempIndustryState.includes('全部行业')) {
+    titleEl.textContent = '全部行业';
+    selEl.innerHTML = '';
+  } else {
+    titleEl.textContent = `已选${tempIndustryState.length}个行业`;
+    selEl.innerHTML = tempIndustryState.map(i =>
+      `<span class="dd-selected-tag">${i}</span>`
+    ).join('');
+  }
+}
+
+function resetIndustry() {
+  tempIndustryState = ['全部行业'];
+  renderIndustryList();
+}
+
+function confirmIndustry() {
+  filterState.industry = [...tempIndustryState];
+  const trigger = document.getElementById('triggerIndustry');
+  if (filterState.industry.includes('全部行业')) {
+    trigger.innerHTML = '全部行业<span class="trigger-arrow">▾</span>';
+  } else {
+    trigger.innerHTML = filterState.industry.join(',') + '<span class="trigger-arrow">▾</span>';
+  }
+  closeDropdown();
+}
+
+// ---- 项目阶段双栏弹窗 ----
+let tempStageState = [];
+function renderStageList() {
+  tempStageState = filterState.stage.length ? [...filterState.stage] : ['全部阶段'];
+  const container = document.getElementById('ddStageLeft');
+  container.innerHTML = STAGES.map((item, i) => {
+    const selected = tempStageState.includes(item.name);
+    return `<div class="dd-list-item ${selected?'selected':''}" data-sidx="${i}" onclick="toggleStageItem(${i})">
+      <span class="dd-checkbox">${selected?'✓':''}</span>
+      <span class="dd-list-item-name">${item.name}</span>
+      <span class="dd-list-arrow">▸</span>
+    </div>`;
+  }).join('');
+  updateStageRight();
+}
+
+function toggleStageItem(idx) {
+  const name = STAGES[idx].name;
+  if (idx === 0) {
+    tempStageState = ['全部阶段'];
+  } else {
+    tempStageState = tempStageState.filter(n => n !== '全部阶段');
+    const pos = tempStageState.indexOf(name);
+    if (pos >= 0) tempStageState.splice(pos, 1);
+    else tempStageState.push(name);
+  }
+  renderStageList();
+}
+
+function updateStageRight() {
+  const titleEl = document.getElementById('ddStageRightTitle');
+  const selEl = document.getElementById('ddStageSelected');
+  if (tempStageState.includes('全部阶段')) {
+    titleEl.textContent = '全部阶段';
+    selEl.innerHTML = '';
+  } else {
+    titleEl.textContent = `已选${tempStageState.length}个阶段`;
+    selEl.innerHTML = tempStageState.map(s =>
+      `<span class="dd-selected-tag">${s}</span>`
+    ).join('');
+  }
+}
+
+function resetStage() {
+  tempStageState = ['全部阶段'];
+  renderStageList();
+}
+
+function confirmStage() {
+  filterState.stage = [...tempStageState];
+  const trigger = document.getElementById('triggerStage');
+  if (filterState.stage.includes('全部阶段')) {
+    trigger.innerHTML = '全部阶段<span class="trigger-arrow">▾</span>';
+  } else {
+    trigger.innerHTML = filterState.stage.join(',') + '<span class="trigger-arrow">▾</span>';
+  }
+  closeDropdown();
+}
+
+// ---- 总投资下拉弹窗 ----
+function selectInvestItem(el, keepOpen) {
+  document.querySelectorAll('#ddInvest .dd-invest-item').forEach(item => {
+    item.classList.remove('selected');
+    const c = item.querySelector('.dd-simple-check');
+    if (c) c.remove();
+  });
+  el.classList.add('selected');
+  el.innerHTML += '<span class="dd-simple-check">✓</span>';
+  filterState.invest = el.dataset.val || '';
+}
+
+// 总投资选项点击自动确认关闭
+document.addEventListener('click', function(e) {
+  if (!currentDropdown || currentDropdown !== 'invest') return;
+  const item = e.target.closest('#ddInvest .dd-invest-item');
+  if (item) {
+    selectInvestItem(item, false);
+    const trigger = document.getElementById('triggerInvest');
+    const text = item.textContent.trim().replace(/✓/g,'').trim();
+    trigger.innerHTML = (text || '全部总投资') + '<span class="trigger-arrow">▾</span>';
+    setTimeout(closeDropdown, 150);
+  }
+});
+
+function toggleCustomInvest() {
+  const row = document.getElementById('customInvestRow');
+  const arrow = document.getElementById('customInvestArrow');
+  if (row.style.display === 'none') {
+    row.style.display = 'flex';
+    arrow.style.transform = 'rotate(90deg)';
+    // 取消预设选项的选中
+    document.querySelectorAll('#ddInvest .dd-invest-item').forEach(item => {
+      item.classList.remove('selected');
+      const c = item.querySelector('.dd-simple-check');
+      if (c) c.remove();
+    });
+  } else {
+    row.style.display = 'none';
+    arrow.style.transform = '';
+  }
+}
+
+function confirmInvest() {
+  const customRow = document.getElementById('customInvestRow');
+  const minVal = document.getElementById('investMin').value;
+  const maxVal = document.getElementById('investMax').value;
+  const trigger = document.getElementById('triggerInvest');
+
+  if (customRow.style.display !== 'none' && (minVal || maxVal)) {
+    filterState.invest = `${minVal||0}万-${maxVal||''}万`;
+    trigger.innerHTML = filterState.invest + '<span class="trigger-arrow">▾</span>';
+  } else if (filterState.invest) {
+    trigger.innerHTML = filterState.invest + '<span class="trigger-arrow">▾</span>';
+  } else {
+    trigger.innerHTML = '全部总投资<span class="trigger-arrow">▾</span>';
+  }
+  closeDropdown();
+}
+
+// 点击页面空白处关闭弹窗（排除弹窗内部）
+document.addEventListener('click', function(e) {
+  if (!currentDropdown) return;
+  const popup = document.getElementById('dd' + currentDropdown.charAt(0).toUpperCase() + currentDropdown.slice(1));
+  if (popup && !popup.contains(e.target) && !e.target.closest('.filter-trigger')) {
+    closeDropdown();
+  }
+});
+
+// ===== Tab 关闭交互 =====
+document.querySelectorAll('.tab-close').forEach(closeBtn => {
+  closeBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const tabItem = this.closest('.tab-item');
+    if(tabItem.classList.contains('active')) return; // 不允许关闭当前激活的tab
+    tabItem.style.opacity = '0';
+    tabItem.style.transform = 'scale(.9)';
+    setTimeout(() => tabItem.remove(), 150);
+  });
+});
+
+document.querySelectorAll('.tab-item').forEach(tab => {
+  tab.addEventListener('click', function(e) {
+    if(e.target.classList.contains('tab-close')) return;
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ===== Init - 默认表格视图 =====
+renderTable();
+renderPagination();
+</script>
+</body>
+</html>

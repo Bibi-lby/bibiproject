@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>审批项目订阅编辑 - 喜鹊招标</title>
+  <style>
+    :root {
+      --primary: #ff7b00;
+      --primary-light: #fff6ef;
+      --primary-border: #ffd6a8;
+      --blue: #1677ff;
+      --blue-bg: #e6f4ff;
+      --success: #52c41a;
+      --danger: #ff4d4f;
+      --text-primary: #1a1a2e;
+      --text-secondary: #5c5c6e;
+      --text-muted: #9999a8;
+      --border: #ebebef;
+      --border-light: #f3f3f6;
+      --bg-page: #f5f6fa;
+      --bg-card: #ffffff;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px; color: var(--text-primary); background: var(--bg-page);
+      line-height: 1.6; -webkit-font-smoothing: antialiased;
+      min-height: 100vh; padding-bottom: 90px;
+    }
+
+    /* ===== 浏览器模拟顶栏 ===== */
+    .browser-bar {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 8px 16px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .browser-close {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--bg-page); display: flex; align-items: center;
+      justify-content: center; font-size: 14px; cursor: pointer; color: var(--text-muted);
+    }
+    .browser-brand {
+      text-align: center;
+    }
+    .browser-brand-name { font-size: 15px; font-weight: 700; }
+    .browser-domain { font-size: 11px; color: var(--text-muted); }
+    .browser-menu {
+      width: 28px; height: 28px; display: flex; align-items: center;
+      justify-content: center; font-size: 16px; color: var(--text-muted); cursor: pointer;
+    }
+
+    /* ===== 页面标题栏 ===== */
+    .page-header {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .page-back {
+      width: 32px; height: 32px; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 18px;
+      cursor: pointer; color: var(--text-primary); flex-shrink: 0;
+    }
+    .page-title {
+      font-size: 17px; font-weight: 600; flex: 1; text-align: center;
+    }
+    .page-placeholder { width: 32px; flex-shrink: 0; }
+
+    /* ===== 表单区域通用 ===== */
+    .form-section {
+      background: #fff; margin-bottom: 10px; padding: 0 16px;
+    }
+
+    /* ---- Section 标题（带橙色竖线） ---- */
+    .section-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 14px 0 10px;
+    }
+    .section-bar {
+      width: 3px; height: 16px; background: var(--primary);
+      border-radius: 2px; flex-shrink: 0;
+    }
+    .section-title-text {
+      font-size: 15px; font-weight: 600; color: var(--text-primary);
+    }
+    .section-count {
+      font-size: 13px; color: var(--blue); font-weight: 500;
+    }
+    .section-optional {
+      font-size: 13px; color: var(--text-muted); font-weight: 400; margin-left: 2px;
+    }
+    .section-help {
+      width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; color: var(--text-muted); margin-left: auto; cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ---- 地区行 (参考图：全国标签+编辑地区链接) ---- */
+    .region-row {
+      display: flex; align-items: center; gap: 10px; padding: 0 0 14px;
+    }
+    .region-badge {
+      display: inline-flex; align-items: center; padding: 6px 18px;
+      border-radius: 20px; font-size: 13.5px; color: var(--text-primary);
+      background: var(--bg-page); border: 1px solid var(--border);
+    }
+    .region-edit-link {
+      font-size: 13.5px; color: var(--blue); cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* ---- 下拉选择器 ---- */
+    .form-dropdown {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; color: var(--text-secondary);
+      cursor: pointer; background: #fff; transition: all .15s;
+      margin-bottom: 4px;
+    }
+    .form-dropdown:active { border-color: var(--blue); }
+    .form-dropdown .dd-val {
+      color: var(--text-primary);
+    }
+    .form-dropdown .dd-arrow { font-size: 10px; color: var(--text-muted); margin-left: 8px; }
+
+    /* ---- 关键词/排除词 区域 ---- */
+    .kw-hint {
+      font-size: 12.5px; color: var(--text-muted); line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .kw-hint a { color: var(--blue); text-decoration: none; cursor: pointer; }
+    /* 输入行 */
+    .kw-input-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    }
+    .kw-input {
+      flex: 1; padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; outline: none;
+      color: var(--text-primary); background: #fafafa;
+      transition: border-color .15s;
+    }
+    .kw-input:focus { border-color: var(--blue); background: #fff; }
+    .kw-input::placeholder { color: var(--text-muted); }
+    .kw-add-btn {
+      padding: 9px 22px; border-radius: 8px; border: none;
+      background: var(--blue); color: #fff; font-size: 14px;
+      font-weight: 500; cursor: pointer; white-space: nowrap;
+      flex-shrink: 0; transition: opacity .15s;
+    }
+    .kw-add-btn:active { opacity: .85; }
+    .kw-add-btn:disabled { opacity: .4; cursor: not-allowed; }
+    /* 已添加标签列表 */
+    .kw-tag-list {
+      display: flex; flex-wrap: wrap; gap: 8px; min-height: 0;
+    }
+    .kw-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 10px; border-radius: 6px; font-size: 13px;
+      background: var(--bg-page); border: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    .kw-tag-remove {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--danger); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; cursor: pointer; flex-shrink: 0;
+    }
+
+    /* ---- 条件关系行（2+关键词时显示） ---- */
+    .kw-relation-row {
+      display: flex; align-items: center; gap: 16px;
+      padding: 8px 0; margin-bottom: 6px;
+    }
+    .kw-relation-label {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 13px; color: var(--text-secondary);
+    }
+    .kw-relation-icon {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 1.5px solid #ccc; display: inline-flex; align-items: center;
+      justify-content: center; flex-shrink: 0;
+    }
+    .kw-relation-option {
+      display: flex; align-items: center; gap: 5px;
+      cursor: pointer; font-size: 13.5px; color: var(--text-primary);
+    }
+    .kw-relation-option.active .kw-relation-icon {
+      border-color: var(--primary); background: var(--primary);
+    }
+    .kw-relation-option.active .kw-relation-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: #fff;
+    }
+
+    /* ---- 同行/推荐关键词区 ---- */
+    .peer-section {
+      margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-light);
+    }
+    .peer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .peer-title { font-size: 13.5px; color: var(--text-primary); font-weight: 500; }
+    .peer-refresh {
+      font-size: 13px; color: var(--text-muted); cursor: pointer; display: flex;
+      align-items: center; gap: 2px;
+    }
+    .peer-refresh:active { color: var(--blue); }
+    .peer-tag-list {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .peer-tag {
+      display: inline-flex; align-items: center; gap: 2px;
+      padding: 5px 11px; border-radius: 6px; font-size: 13px;
+      background: #fff; border: 1px solid var(--border);
+      color: var(--text-secondary); cursor: pointer; transition: all .15s;
+    }
+    .peer-tag:active {
+      border-color: var(--blue); color: var(--blue);
+    }
+    .peer-tag-plus { color: var(--blue); font-size: 14px; font-weight: 600; }
+
+    /* ---- 更多设置 可折叠 ---- */
+    .more-settings-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; cursor: pointer;
+    }
+    .more-settings-label { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .more-settings-arrow {
+      font-size: 13px; color: var(--blue); display: flex; align-items: center; gap: 2px;
+      transition: transform .25s ease;
+    }
+    .more-settings-arrow.expanded { transform: rotate(180deg); }
+    .more-settings-body {
+      max-height: 0; overflow: hidden; transition: max-height .3s ease;
+    }
+    .more-settings-body.show { max-height: 400px; }
+
+    /* 单选组 */
+    .radio-group { margin-bottom: 16px; }
+    .radio-group-label {
+      font-size: 13.5px; color: var(--text-secondary); margin-bottom: 10px;
+    }
+    .radio-options { display: flex; flex-wrap: wrap; gap: 16px; }
+    .radio-option {
+      display: flex; align-items: center; gap: 6px; cursor: pointer;
+      font-size: 14px; color: var(--text-primary);
+    }
+    .radio-circle {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid #ccc; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; transition: all .15s;
+      box-sizing: border-box;
+    }
+    .radio-option.active .radio-circle {
+      border-color: var(--blue); background: var(--blue);
+    }
+    .radio-option.active .radio-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #fff;
+    }
+
+    /* 开关行 */
+    .switch-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0 4px;
+    }
+    .switch-label { font-size: 14px; color: var(--text-primary); }
+    .toggle-switch {
+      width: 44px; height: 24px; border-radius: 12px;
+      background: #ddd; position: relative; cursor: pointer; transition: background .2s;
+      flex-shrink: 0;
+    }
+    .toggle-switch.on { background: var(--blue); }
+    .toggle-knob {
+      width: 20px; height: 20px; border-radius: 50%; background: #fff;
+      position: absolute; top: 2px; left: 2px;
+      transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    }
+    .toggle-switch.on .toggle-knob { transform: translateX(20px); }
+
+    /* ===== 底部保存按钮 ===== */
+    .bottom-save-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #fff; border-top: 1px solid var(--border);
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0));
+      z-index: 100;
+    }
+    .btn-save {
+      width: 100%; padding: 13px; border-radius: 25px; border: none;
+      background: linear-gradient(135deg, #ff9248 0%, #ff7b00 100%);
+      color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(255,123,0,.3);
+      transition: opacity .15s; letter-spacing: 1px;
+    }
+    .btn-save:active { opacity: .9; }
+
+    /* ============================================================
+       下拉弹窗
+       ============================================================ */
+    .dropdown-overlay {
+      display: none; position: fixed; inset: 0; z-index: 400;
+      background: rgba(0,0,0,.45);
+    }
+    .dropdown-overlay.show { display: block; }
+    .dropdown-sheet {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #fff; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      z-index: 401; max-height: 65vh; overflow-y: auto;
+      animation: sheetUp .25s ease;
+      padding: 0 0 env(safe-area-inset-bottom, 16px);
+    }
+    @keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .dropdown-sheet-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 16px 12px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; background: #fff; z-index: 1;
+    }
+    .dropdown-sheet-title { font-size: 15px; font-weight: 600; }
+    .dropdown-sheet-close {
+      width: 28px; height: 28px; border-radius: 50%; background: var(--bg-page);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; cursor: pointer; color: var(--text-muted);
+    }
+    .dropdown-sheet-body { padding: 8px 0; }
+
+    /* 下拉选项项 */
+    .drop-item {
+      padding: 13px 16px; font-size: 14.5px; color: var(--text-primary);
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+      transition: background .15s;
+    }
+    .drop-item:active { background: var(--bg-page); }
+    .drop-item.active { color: var(--primary); font-weight: 500; }
+    .drop-check { color: var(--primary); font-weight: 700; font-size: 16px; }
+
+    .dropdown-footer {
+      display: flex; gap: 12px; padding: 12px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .dropdown-footer-btn {
+      flex: 1; padding: 11px; border-radius: 22px; font-size: 14px;
+      font-weight: 600; border: none; cursor: pointer; transition: all .15s;
+    }
+    .dropdown-footer-btn.cancel {
+      background: var(--bg-page); color: var(--text-secondary); border: 1px solid var(--border);
+    }
+    .dropdown-footer-btn.confirm {
+      background: linear-gradient(135deg, #ff9248 0%, #ff7b00 100%); color: #fff;
+    }
+
+    /* 地区选择双栏 */
+    .region-cols {
+      display: flex; min-height: 260px;
+    }
+    .region-col-left {
+      width: 95px; background: #f7f8fa; border-right: 1px solid var(--border-light);
+      flex-shrink: 0; overflow-y: auto;
+    }
+    .region-col-right {
+      flex: 1; padding: 8px 12px; overflow-y: auto;
+    }
+    .region-item-l {
+      padding: 12px 14px; font-size: 13.5px; color: var(--text-secondary);
+      cursor: pointer; transition: all .15s; position: relative;
+    }
+    .region-item-l.active {
+      color: var(--primary); font-weight: 600; background: #fff;
+      border-left: 3px solid var(--primary);
+    }
+    .region-item-r {
+      padding: 8px 10px; font-size: 13px; color: var(--text-secondary);
+      cursor: pointer; border-radius: 20px; transition: all .15s;
+    }
+    .region-item-r.selected {
+      background: var(--primary-light); color: var(--primary); font-weight: 600;
+    }
+
+    /* ============================================================
+       全屏页面式弹窗（项目阶段 / 项目行业 — 同审批列表）
+       ============================================================ */
+    .fullscreen-overlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: #fff;
+    }
+    .fullscreen-overlay.show { display: flex; flex-direction: column; animation: fsIn .25s ease; }
+    @keyframes fsIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+    /* 全屏顶部导航 */
+    .fs-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0; background: #fff;
+    }
+    .fs-back {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text-primary); font-size: 18px;
+    }
+    .fs-header-title { font-size: 16px; font-weight: 600; }
+    .fs-header-placeholder { width: 32px; }
+
+    /* 全屏搜索栏 */
+    .fs-search-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+    }
+    .fs-search-input {
+      flex: 1; padding: 8px 12px 8px 32px; border: 1px solid var(--border);
+      border-radius: 20px; font-size: 13.5px; outline: none;
+      background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;
+    }
+    .fs-search-input:focus { border-color: var(--blue); background-image: none; padding-left: 12px; }
+    .fs-search-btn {
+      padding: 8px 16px; border-radius: 20px; border: none;
+      background: var(--blue); color: #fff; font-size: 13px;
+      font-weight: 600; cursor: pointer;
+    }
+
+    /* 全屏筛选条 */
+    .fs-filter-row {
+      display: flex; align-items: center; gap: 4px; padding: 8px 12px;
+      border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .fs-filter-row::-webkit-scrollbar { display: none; }
+    .fs-filter-chip {
+      flex-shrink: 0; padding: 4px 10px; border-radius: 14px;
+      font-size: 12px; cursor: pointer; white-space: nowrap;
+      border: 1px solid var(--border); color: var(--text-secondary);
+      background: #fff; transition: all .15s;
+      display: flex; align-items: center; gap: 2px;
+    }
+    .fs-filter-chip.active { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
+    .fs-filter-chip .chip-arrow { font-size: 9px; margin-left: 2px; }
+
+    /* 全屏标题 */
+    .fs-section-title {
+      padding: 12px 16px 8px; font-size: 15px; font-weight: 700;
+      color: var(--text-primary); flex-shrink: 0;
+    }
+
+    /* 全屏双栏主体 */
+    .fs-body { flex: 1; display: flex; overflow: hidden; }
+    .fs-col-left {
+      width: 45%; overflow-y: auto; background: #f7f8fa;
+      border-right: 1px solid var(--border-light);
+    }
+    .fs-col-right {
+      width: 55%; overflow-y: auto; background: #fff;
+    }
+
+    /* 左侧选项 */
+    .fs-opt {
+      padding: 13px 16px; font-size: 13.5px; color: var(--text-secondary);
+      cursor: pointer; transition: all .15s; position: relative;
+      border-left: 3px solid transparent;
+    }
+    .fs-opt.active {
+      color: var(--primary); font-weight: 600; background: #fff;
+      border-left-color: var(--primary);
+    }
+    .fs-opt .fs-opt-sub { font-size: 11.5px; color: var(--text-muted); font-weight: 400; margin-left: 4px; }
+
+    /* 右侧已选预览 */
+    .fs-sel-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 16px; border-bottom: 1px solid var(--border-light);
+      font-size: 13.5px; color: var(--text-primary);
+    }
+    .fs-sel-check { color: var(--primary); font-size: 16px; font-weight: 700; }
+
+    /* 全屏底部按钮 */
+    .fs-footer {
+      display: flex; gap: 12px; padding: 12px 16px;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+      background: #fff;
+    }
+    #toast {
+      position: fixed; top: 45%; left: 50%; transform: translate(-50%,-50%);
+      background: rgba(0,0,0,.75); color: #fff; padding: 10px 22px;
+      border-radius: 22px; font-size: 13.5px; z-index: 9999;
+      opacity: 0; pointer-events: none; transition: opacity .25s;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- 浏览器顶栏 -->
+<div class="browser-bar">
+  <div class="browser-close">✕</div>
+  <div class="browser-brand">
+    <div class="browser-brand-name">喜鹊招标</div>
+    <div class="browser-domain">m.xqzhaobiao.com</div>
+  </div>
+  <div class="browser-menu">···</div>
+</div>
+
+<!-- 页面标题栏 -->
+<div class="page-header">
+  <div class="page-back" onclick="goBack()">‹</div>
+  <div class="page-title" id="pageTitle">审批项目订阅编辑</div>
+  <div class="page-placeholder"></div>
+</div>
+
+
+<!-- ============================================================
+     表单主体
+     ============================================================ -->
+
+<!-- 1. 选择订阅地区 -->
+<div class="form-section">
+  <div class="section-header">
+    <div class="section-bar"></div>
+    <span class="section-title-text">选择订阅地区</span>
+    <span class="section-count" id="regionCount">（全国）</span>
+  </div>
+  <div class="region-row" id="regionBadges"></div>
+</div>
+
+<!-- 2. 选择项目阶段 -->
+<div class="form-section">
+  <div class="section-header">
+    <div class="section-bar"></div>
+    <span class="section-title-text">选择项目阶段</span>
+  </div>
+  <div class="form-dropdown" id="stageDropdown" onclick="openStageDropdown()">
+    <span class="dd-val" id="stageVal">全部阶段</span>
+    <span class="dd-arrow">▼</span>
+  </div>
+</div>
+
+<!-- 3. 选择项目行业 -->
+<div class="form-section">
+  <div class="section-header">
+    <div class="section-bar"></div>
+    <span class="section-title-text">选择项目行业</span>
+  </div>
+  <div class="form-dropdown" id="industryDropdown" onclick="openIndustryDropdown()">
+    <span class="dd-val" id="industryVal">全部行业</span>
+    <span class="dd-arrow">▼</span>
+  </div>
+</div>
+
+<!-- 4. 添加关键词 -->
+<div class="form-section">
+  <div class="section-header">
+    <div class="section-bar"></div>
+    <span class="section-title-text">添加关键词</span>
+    <span class="section-count" id="kwCount">（<span id="kwNum">0</span>/30）</span>
+    <span class="section-optional">（选填）</span>
+  </div>
+  <div class="kw-hint">请输入订阅关键词，点击下方<a onclick="focusKwInput()">「添加」</a>按钮进行添加</div>
+
+  <!-- 条件关系（2+关键词时显示） -->
+  <div class="kw-relation-row" id="kwRelationRow" style="display:none;">
+    <span class="kw-relation-label">
+      <span style="color:var(--blue);font-size:14px;">ⓘ</span> 条件关系：
+    </span>
+    <label class="kw-relation-option active" onclick="setKwRelation('any',this)">
+      <span class="kw-relation-icon"><span class="kw-relation-dot"></span></span> 满足任意
+    </label>
+    <label class="kw-relation-option" onclick="setKwRelation('all',this)">
+      <span class="kw-relation-icon"><span class="kw-relation-dot"></span></span> 同时满足
+    </label>
+  </div>
+
+  <div class="kw-input-row">
+    <input type="text" class="kw-input" id="kwInput" placeholder="请输入产品或主营业务（不超过20个字）" maxlength="20" />
+    <button class="kw-add-btn" id="kwAddBtn" onclick="addKeyword()">添加</button>
+  </div>
+  <div class="kw-tag-list" id="kwTagList"></div>
+
+  <!-- 推荐/同行关键词（始终显示，标题根据关键词数量切换） -->
+  <div class="peer-section" id="peerSection">
+    <div class="peer-header">
+      <span class="peer-title" id="peerTitleWrap">
+        <span id="peerIconBadge" style="display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;background:var(--primary);color:#fff;font-size:11px;border-radius:3px;margin-right:4px;font-weight:700;">荐</span>
+        <span id="peerTitleText">推荐关键词</span>
+      </span>
+      <span class="peer-refresh" onclick="refreshPeerKw()">⟳ 换一批</span>
+    </div>
+    <div class="peer-tag-list" id="peerTagList"></div>
+  </div>
+</div>
+
+<!-- 5. 添加排除词 -->
+<div class="form-section">
+  <div class="section-header">
+    <div class="section-bar"></div>
+    <span class="section-title-text">添加排除词</span>
+    <span class="section-count" id="exCount">（<span id="exNum">0</span>/30）</span>
+    <span class="section-optional">（选填）</span>
+    <div class="section-help" title="排除词用于过滤掉不想看到的项目信息">?</div>
+  </div>
+  <div class="kw-hint">请输入排除词，点击下方<a onclick="focusExInput()">「添加」</a>按钮进行添加</div>
+  <div class="kw-input-row">
+    <input type="text" class="kw-input" id="exInput" placeholder="请输入排除词（不超过20个字）" maxlength="20" />
+    <button class="kw-add-btn" id="exAddBtn" onclick="addExWord()">添加</button>
+  </div>
+  <div class="kw-tag-list" id="exTagList"></div>
+</div>
+
+<!-- 6. 更多设置（可折叠） -->
+<div class="form-section">
+  <div class="more-settings-toggle" onclick="toggleMoreSettings()">
+    <span class="more-settings-label">更多设置</span>
+    <span class="more-settings-arrow" id="moreArrow">展开 ▼</span>
+  </div>
+  <div class="more-settings-body" id="moreBody">
+    <div style="padding: 0 0 4px;">
+      <!-- 搜索范围 -->
+      <div class="radio-group">
+        <div class="radio-group-label">搜索范围：</div>
+        <div class="radio-options">
+          <label class="radio-option active" onclick="setRadio(this,'scope','full')">
+            <div class="radio-circle"><div class="radio-dot"></div></div>全文搜索
+          </label>
+          <label class="radio-option" onclick="setRadio(this,'scope','title')">
+            <div class="radio-circle"><div class="radio-dot"></div></div>标题搜索
+          </label>
+          <label class="radio-option" onclick="setRadio(this,'scope','content')">
+            <div class="radio-circle"><div class="radio-dot"></div></div>采购内容搜索
+          </label>
+        </div>
+      </div>
+      <!-- 搜索模式 -->
+      <div class="radio-group">
+        <div class="radio-group-label">搜索模式：</div>
+        <div class="radio-options">
+          <label class="radio-option active" onclick="setRadio(this,'mode','precise')">
+            <div class="radio-circle"><div class="radio-dot"></div></div>精准搜索
+          </label>
+          <label class="radio-option" onclick="setRadio(this,'mode','fuzzy')">
+            <div class="radio-circle"><div class="radio-dot"></div></div>模糊搜索
+          </label>
+          <label class="radio-option" onclick="setRadio(this,'mode','smart')">
+            <div class="radio-circle"><div class="radio-dot"></div></div>智能搜索
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 7. 商机推送开关（独立展示，在更多设置下方） -->
+<div class="form-section">
+  <div class="switch-row" style="padding:14px 0;">
+    <span class="switch-label">审批项目最新商机推送</span>
+    <div class="toggle-switch" id="pushToggle" onclick="togglePush()">
+      <div class="toggle-knob"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 底部保存按钮 -->
+<div class="bottom-save-bar">
+  <button class="btn-save" onclick="saveSubscription()">完成并查看商机</button>
+</div>
+
+
+<!-- ============================================================
+     弹窗区域
+     ============================================================ -->
+
+<!-- 地区选择弹窗 -->
+<div class="dropdown-overlay" id="overlayRegion" onclick="closeRegionDropdown()">
+  <div class="dropdown-sheet" onclick="event.stopPropagation()" style="max-height:70vh;">
+    <div class="dropdown-sheet-header">
+      <span class="dropdown-sheet-title">选择订阅地区</span>
+      <div class="dropdown-sheet-close" onclick="closeRegionDropdown()">✕</div>
+    </div>
+    <div class="region-cols">
+      <div class="region-col-left" id="editProvList"></div>
+      <div class="region-col-right" id="editCityList"></div>
+    </div>
+    <div class="dropdown-footer">
+      <button class="dropdown-footer-btn cancel" onclick="closeRegionDropdown()">取消</button>
+      <button class="dropdown-footer-btn confirm" onclick="confirmRegionEdit()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 项目阶段全屏弹窗 -->
+<div class="fullscreen-overlay" id="fsOverlayStage">
+  <div class="fs-header">
+    <div class="fs-back" onclick="closeFullscreenStage()">‹</div>
+    <span class="fs-header-title">选择项目阶段</span>
+    <div class="fs-header-placeholder"></div>
+  </div>
+  <div class="fs-search-row">
+    <input class="fs-search-input" placeholder="请输入产品、行业或项目名称" />
+    <button class="fs-search-btn">搜索</button>
+  </div>
+  <div class="fs-filter-row">
+    <div class="fs-filter-chip active">全国<span class="chip-arrow">▼</span></div>
+    <div class="fs-filter-chip active">项目阶段<span class="chip-arrow">▼</span></div>
+    <div class="fs-filter-chip">全部行业<span class="chip-arrow">▼</span></div>
+    <div class="fs-filter-chip">更多筛选<span class="chip-arrow">▼</span></div>
+  </div>
+  <div class="fs-section-title">项目阶段</div>
+  <div class="fs-body">
+    <div class="fs-col-left" id="fsStageLeft"></div>
+    <div class="fs-col-right" id="fsStageRight"></div>
+  </div>
+  <div class="fs-footer">
+    <button class="dropdown-footer-btn cancel" onclick="resetFsStage()">重置</button>
+    <button class="dropdown-footer-btn confirm" onclick="confirmFsStage()">确定</button>
+  </div>
+</div>
+
+<!-- 项目行业全屏弹窗 -->
+<div class="fullscreen-overlay" id="fsOverlayIndustry">
+  <div class="fs-header">
+    <div class="fs-back" onclick="closeFullscreenIndustry()">‹</div>
+    <span class="fs-header-title">选择项目行业</span>
+    <div class="fs-header-placeholder"></div>
+  </div>
+  <div class="fs-search-row">
+    <input class="fs-search-input" placeholder="请输入产品、行业或项目名称" />
+    <button class="fs-search-btn">搜索</button>
+  </div>
+  <div class="fs-filter-row">
+    <div class="fs-filter-chip active">全国<span class="chip-arrow">▼</span></div>
+    <div class="fs-filter-chip">施工许可...<span class="chip-arrow">▼</span></div>
+    <div class="fs-filter-chip active">全部行业<span class="chip-arrow">▼</span></div>
+    <div class="fs-filter-chip">更多筛选<span class="chip-arrow">▼</span></div>
+  </div>
+  <div class="fs-section-title">项目行业</div>
+  <div class="fs-body">
+    <div class="fs-col-left" id="fsIndustryLeft"></div>
+    <div class="fs-col-right" id="fsIndustryRight"></div>
+  </div>
+  <div class="fs-footer">
+    <button class="dropdown-footer-btn cancel" onclick="resetFsIndustry()">重置</button>
+    <button class="dropdown-footer-btn confirm" onclick="confirmFsIndustry()">确定</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+
+<script>
+// ============================================================
+// 数据定义
+// ============================================================
+// 阶段数据（用于全屏双栏）
+const STAGE_DATA = [
+  { key: 'all', label: '全部阶段', sub: '全部' },
+  { key: 'initiate', label: '项目立项', sub: '' },
+  { key: 'pre', label: '项目前期', sub: '' },
+  { key: 'prepare', label: '项目准备', sub: '' },
+  { key: 'design', label: '设计阶段', sub: '' },
+  { key: 'start', label: '项目开工准备', sub: '' },
+  { key: 'accept', label: '项目竣工验收', sub: '' },
+];
+
+// 行业数据
+const INDUSTRY_DATA = [
+  { key: 'all', label: '全部行业', sub: '全部' },
+  { key: 'arch', label: '建筑工程', sub: '' },
+  { key: 'energy', label: '能源工业', sub: '' },
+  { key: 'mfg', label: '制造业', sub: '' },
+  { key: 'logistics', label: '仓储物流', sub: '' },
+  { key: 'muni', label: '市政工程', sub: '' },
+  { key: 'transport', label: '交通工程', sub: '' },
+  { key: 'edu', label: '教育科技', sub: '' },
+  { key: 'eco', label: '生态环保', sub: '' },
+  { key: 'digital', label: '数字政务', sub: '' },
+  { key: 'housing2', label: '保障性住房', sub: '' },
+];
+
+const REGION_DATA = [
+  { prov: '全国', cities: ['全国'] },
+  { prov: '广东', cities: ['广州','深圳','佛山','东莞','惠州','中山','江门','珠海','肇庆','汕头','茂名','湛江','清远','韶关','河源','梅州','汕尾','阳江','潮州','揭阳','云浮'] },
+  { prov: '北京', cities: ['北京'] },
+  { prov: '上海', cities: ['上海'] },
+  { prov: '浙江', cities: ['杭州','宁波','温州','绍兴','湖州','嘉兴','金华','衢州','舟山','台州','丽水'] },
+  { prov: '江苏', cities: ['南京','苏州','无锡','常州','南通','徐州','连云港','淮安','盐城','扬州镇江','泰州','宿迁'] },
+  { prov: '四川', cities: ['成都','绵阳','自贡','攀枝花','泸州','德阳','广元','遂宁','内江','乐山','南充','眉山','宜宾','广安','达州','雅安','巴中','资阳'] },
+  { prov: '湖北', cities: ['武汉','黄石','十堰','宜昌','襄阳','鄂州','荆门','孝感','荆州','黄冈','咸宁','随州'] },
+  { prov: '福建', cities: ['福州','厦门','莆田','三明','泉州','漳州','南平','龙岩','宁德'] },
+];
+
+// 推荐/同行关键词池（多批）
+const PEER_KW_POOLS = [
+  ['广告发布','展览服务','教育培训','技术推广','信息咨询服务'],
+  ['小区','环保','小区物业','公司','建设'],
+  ['物业','保洁','绿化','维修','安保'],
+  ['环保','小区','绿化工程','家政服务','搬家'],
+];
+
+// 表单状态
+let formState = {
+  regionProvs: new Set(['广东']),
+  regionCities: new Set(['广州']),
+  stages: new Set(['all']),
+  industryKeys: new Set(),
+  keywords: [],
+  excludeWords: [],
+  scope: 'full',
+  mode: 'precise',
+  pushOn: false,
+  kwRelation: 'any', // any=满足任意, all=同时满足
+};
+
+let editProvIndex = 1; // 默认广东
+
+// 推荐关键词池索引 & 更多设置展开状态 — 必须在init()之前声明（避免TDZ）
+let currentPeerPool = 0;
+let moreExpanded = false;
+
+// ============================================================
+// 初始化
+// ============================================================
+function init() {
+  try {
+    renderRegionBadges();
+    renderKwTags();
+    renderExTags();
+    // 始终显示推荐关键词
+    checkPeerAndRelation();
+    document.body.classList.add('js-loaded');
+  } catch(e) {
+    console.error('init error:', e);
+  }
+}
+init();
+
+
+// ============================================================
+// 地区相关
+// ============================================================
+function renderRegionBadges() {
+  const container = document.getElementById('regionBadges');
+  // 参考图：显示已选标签（如"全国"）+ 蓝色"编辑地区"链接
+  let displayText = '全国';
+  if (formState.regionCities.has('全部')) {
+    displayText = '全国';
+  } else if (formState.regionCities.size > 0) {
+    // 取前几个城市名
+    const cities = [...formState.regionCities];
+    displayText = cities.slice(0, 3).join('、') + (cities.length > 3 ? `等${cities.length}个市` : '');
+  }
+  container.innerHTML =
+    `<span class="region-badge">${displayText}</span>` +
+    `<span class="region-edit-link" onclick="openRegionDropdown()">编辑地区</span>`;
+
+  // 更新标题计数
+  const count = formState.regionCities.has('全部') ? '全国'
+    : (formState.regionCities.size || '1') + '';
+  document.getElementById('regionCount').textContent = `（${count}）`;
+}
+
+function openRegionDropdown() {
+  document.getElementById('overlayRegion').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  initRegionEditor();
+}
+
+function closeRegionDropdown() {
+  document.getElementById('overlayRegion').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function initRegionEditor() {
+  const leftEl = document.getElementById('editProvList');
+  leftEl.innerHTML = REGION_DATA.map((r,i) =>
+    `<div class="region-item-l ${i===editProvIndex?'active':''}" onclick="selectEditProv(${i},this)">${r.prov}</div>`
+  ).join('');
+  updateEditCities(editProvIndex);
+}
+
+function selectEditProv(idx, el) {
+  editProvIndex = idx;
+  document.querySelectorAll('#editProvList .region-item-l').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  updateEditCities(idx);
+}
+
+function updateEditCities(idx) {
+  const rightEl = document.getElementById('editCityList');
+  const cities = REGION_DATA[idx].cities;
+  rightEl.innerHTML = cities.map(city => {
+    const sel = formState.regionCities.has(city) ? 'selected' : '';
+    return `<div class="region-item-r ${sel}" onclick="toggleEditCity('${city}',this)">${city}</div>`;
+  }).join('');
+}
+
+function toggleEditCity(city, el) {
+  if (city === '全部') {
+    formState.regionCities.clear(); formState.regionCities.add('全部');
+    // 也加入当前省的所有市
+    const prov = REGION_DATA[editProvIndex];
+    if (prov.prov !== '全国') formState.regionProvs.add(prov.prov);
+  } else {
+    formState.regionCities.delete('全部');
+    if (formState.regionCities.has(city)) { formState.regionCities.delete(city); el.classList.remove('selected'); }
+    else { formState.regionCities.add(city); el.classList.add('selected'); }
+  }
+  updateEditCities(editProvIndex);
+}
+
+function confirmRegionDropdown() { closeRegionDropdown(); } // alias
+function confirmRegionEdit() {
+  renderRegionBadges();
+  closeRegionDropdown();
+  showToast('地区已更新');
+}
+
+
+// ============================================================
+// 项目阶段 — 全屏双栏弹窗
+// ============================================================
+function openStageDropdown() {
+  document.getElementById('fsOverlayStage').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  initFsStage();
+}
+
+function closeFullscreenStage() {
+  document.getElementById('fsOverlayStage').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function initFsStage() {
+  const leftEl = document.getElementById('fsStageLeft');
+  leftEl.innerHTML = STAGE_DATA.map((s, i) => {
+    const cls = formState.stages.has(s.key) ? 'active' : '';
+    const subHtml = s.sub ? `<span class="fs-opt-sub">(${s.sub})</span>` : '';
+    return `<div class="fs-opt ${cls}" data-key="${s.key}" onclick="selectFsStageOpt('${s.key}',${i},this)">
+      <span style="color:${s.key==='all'?'var(--primary)':'inherit'}">${s.label}</span>${subHtml}
+    </div>`;
+  }).join('');
+  renderFsStageRight();
+}
+
+function selectFsStageOpt(key, idx, el) {
+  if (key === 'all') {
+    formState.stages.clear(); formState.stages.add('all');
+  } else {
+    formState.stages.delete('all');
+    if (formState.stages.has(key)) formState.stages.delete(key);
+    else formState.stages.add(key);
+  }
+  document.querySelectorAll('#fsStageLeft .fs-opt').forEach(o => {
+    o.classList.toggle('active', formState.stages.has(o.dataset.key));
+  });
+  renderFsStageRight();
+}
+
+function renderFsStageRight() {
+  const rEl = document.getElementById('fsStageRight');
+  if (formState.stages.size === 0 || (formState.stages.size === 1 && formState.stages.has('all'))) {
+    rEl.innerHTML = `<div class="fs-sel-item"><span>全部阶段</span><span class="fs-sel-check">✓</span></div>`;
+  } else {
+    rEl.innerHTML = [...formState.stages].map(k => {
+      const f = STAGE_DATA.find(s => s.key === k);
+      return `<div class="fs-sel-item"><span>${f ? f.label : k}</span><span class="fs-sel-check">✓</span></div>`;
+    }).join('');
+  }
+}
+
+function resetFsStage() { formState.stages = new Set(['all']); initFsStage(); showToast('已重置'); }
+
+function confirmFsStage() {
+  const labels = [...formState.stages].map(k => { const f = STAGE_DATA.find(s => s.key === k); return f ? f.label : k; });
+  document.getElementById('stageVal').textContent = labels.includes('全部阶段') ? '全部阶段' : labels.join(',');
+  closeFullscreenStage();
+}
+
+
+// ============================================================
+// 项目行业下拉（多选）
+// ============================================================
+let tempIndustryKeys;
+
+function openIndustryDropdown() {
+  tempIndustryKeys = new Set(formState.industryKeys);
+  document.getElementById('fsOverlayIndustry').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  initFsIndustry();
+}
+
+function closeFullscreenIndustry() {
+  document.getElementById('fsOverlayIndustry').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function initFsIndustry() {
+  const leftEl = document.getElementById('fsIndustryLeft');
+  leftEl.innerHTML = INDUSTRY_DATA.map((ind, i) => {
+    const isActive = ind.key === 'all'
+      ? tempIndustryKeys.size === 0
+      : tempIndustryKeys.has(ind.key);
+    const subHtml = ind.sub ? `<span class="fs-opt-sub">(${ind.sub})</span>` : '';
+    return `<div class="fs-opt ${isActive ? 'active' : ''}" data-key="${ind.key}" onclick="selectFsIndOpt('${ind.key}',${i},this)">
+      <span style="color:${ind.key==='all'?'var(--primary)':'inherit'}">${ind.label}</span>${subHtml}
+    </div>`;
+  }).join('');
+  renderFsIndustryRight();
+}
+
+function selectFsIndOpt(key, idx, el) {
+  if (key === 'all') { tempIndustryKeys.clear(); }
+  else {
+    tempIndustryKeys.delete('all');
+    if (tempIndustryKeys.has(key)) tempIndustryKeys.delete(key);
+    else tempIndustryKeys.add(key);
+  }
+  document.querySelectorAll('#fsIndustryLeft .fs-opt').forEach(o => {
+    const isAll = o.dataset.key === 'all';
+    o.classList.toggle('active', isAll ? tempIndustryKeys.size === 0 : tempIndustryKeys.has(o.dataset.key));
+  });
+  renderFsIndustryRight();
+}
+
+function renderFsIndustryRight() {
+  const rEl = document.getElementById('fsIndustryRight');
+  if (tempIndustryKeys.size === 0) {
+    rEl.innerHTML = `<div class="fs-sel-item"><span>全部</span><span class="fs-sel-check">✓</span></div>`;
+  } else {
+    rEl.innerHTML = [...tempIndustryKeys].map(k => {
+      const f = INDUSTRY_DATA.find(i => i.key === k);
+      return `<div class="fs-sel-item"><span>${f ? f.label : k}</span><span class="fs-sel-check">✓</span></div>`;
+    }).join('');
+  }
+}
+
+function resetFsIndustry() { tempIndustryKeys = new Set(); initFsIndustry(); showToast('已重置'); }
+
+function confirmFsIndustry() {
+  formState.industryKeys = new Set(tempIndustryKeys);
+  if (formState.industryKeys.size === 0) {
+    document.getElementById('industryVal').textContent = '全部行业';
+  } else {
+    const labels = [...formState.industryKeys].map(k => {
+      const f = INDUSTRY_DATA.find(i => i.key === k); return f ? f.label : k;
+    });
+    document.getElementById('industryVal').textContent = labels[0] + (labels.length > 1 ? `(${labels.length})` : '');
+  }
+  closeFullscreenIndustry();
+}
+
+
+// ============================================================
+// 关键词
+// ============================================================
+function addKeyword() {
+  const input = document.getElementById('kwInput');
+  const val = input.value.trim();
+  if (!val) { showToast('请输入关键词'); input.focus(); return; }
+  if (val.length > 20) { showToast('不超过20个字'); return; }
+  if (formState.keywords.length >= 30) { showToast('最多添加30个关键词'); return; }
+  if (formState.keywords.includes(val)) { showToast('该关键词已存在'); return; }
+
+  formState.keywords.push(val);
+  input.value = '';
+  renderKwTags();
+  checkPeerAndRelation();
+  showToast('已添加');
+}
+
+function removeKeyword(index) {
+  formState.keywords.splice(index, 1);
+  renderKwTags();
+  checkPeerAndRelation();
+}
+
+function renderKwTags() {
+  const list = document.getElementById('kwTagList');
+  document.getElementById('kwNum').textContent = formState.keywords.length;
+  // 条件关系：2+关键词显示
+  const relRow = document.getElementById('kwRelationRow');
+  relRow.style.display = formState.keywords.length >= 2 ? 'flex' : 'none';
+
+  if (formState.keywords.length === 0) { list.innerHTML = ''; return; }
+  list.innerHTML = formState.keywords.map((kw,i) =>
+    `<span class="kw-tag">${kw}<span class="kw-tag-remove" onclick="removeKeyword(${i})">×</span></span>`
+  ).join('');
+}
+
+function setKwRelation(val, el) {
+  formState.kwRelation = val;
+  document.querySelectorAll('#kwRelationRow .kw-relation-option').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function focusKwInput() { document.getElementById('kwInput').focus(); }
+
+// 推荐/同行关键词 — 始终显示，标题根据关键词数量切换
+
+function checkPeerAndRelation() {
+  const peerEl = document.getElementById('peerSection');
+  const iconBadge = document.getElementById('peerIconBadge');
+  const titleText = document.getElementById('peerTitleText');
+
+  // 始终显示
+  peerEl.style.display = '';
+
+  if (formState.keywords.length === 0) {
+    // 无关键词 → 显示「推荐关键词」带橙色荐图标
+    iconBadge.style.display = 'inline-block';
+    iconBadge.textContent = '荐';
+    titleText.textContent = '推荐关键词';
+  } else {
+    // 有关键词 → 显示「同行订阅的关键词」无图标
+    iconBadge.style.display = 'none';
+    titleText.textContent = '同行订阅的关键词';
+  }
+
+  if (!peerEl.dataset.rendered || formState.keywords.length === 0) {
+    renderPeerKeywords();
+    peerEl.dataset.rendered = '1';
+  }
+}
+
+function renderPeerKeywords() {
+  const pool = PEER_KW_POOLS[currentPeerPool % PEER_KW_POOLS.length];
+  const list = document.getElementById('peerTagList');
+  list.innerHTML = pool.map(kw =>
+    `<span class="peer-tag" onclick="addPeerKw('${kw}')">${kw}<span class="peer-tag-plus">+</span></span>`
+  ).join('');
+}
+
+function refreshPeerKw() {
+  currentPeerPool++;
+  renderPeerKeywords();
+}
+
+function addPeerKw(kw) {
+  if (formState.keywords.length >= 30) { showToast('最多添加30个关键词'); return; }
+  if (formState.keywords.includes(kw)) { showToast('该关键词已存在'); return; }
+  formState.keywords.push(kw);
+  renderKwTags();
+  checkPeerAndRelation();
+  showToast(`已添加「${kw}」`);
+}
+
+
+// ============================================================
+// 排除词
+// ============================================================
+function addExWord() {
+  const input = document.getElementById('exInput');
+  const val = input.value.trim();
+  if (!val) { showToast('请输入排除词'); input.focus(); return; }
+  if (val.length > 20) { showToast('不超过20个字'); return; }
+  if (formState.excludeWords.length >= 30) { showToast('最多添加30个排除词'); return; }
+  if (formState.excludeWords.includes(val)) { showToast('该排除词已存在'); return; }
+
+  formState.excludeWords.push(val);
+  input.value = '';
+  renderExTags();
+  showToast('已添加');
+}
+
+function removeExWord(index) {
+  formState.excludeWords.splice(index, 1);
+  renderExTags();
+}
+
+function renderExTags() {
+  const list = document.getElementById('exTagList');
+  document.getElementById('exNum').textContent = formState.excludeWords.length;
+  if (formState.excludeWords.length === 0) { list.innerHTML = ''; return; }
+  list.innerHTML = formState.excludeWords.map((w,i) =>
+    `<span class="kw-tag">${w}<span class="kw-tag-remove" onclick="removeExWord(${i})">×</span></span>`
+  ).join('');
+}
+
+function focusExInput() { document.getElementById('exInput').focus(); }
+
+
+// ============================================================
+// 更多设置（折叠）
+// ============================================================
+
+function toggleMoreSettings() {
+  moreExpanded = !moreExpanded;
+  const body = document.getElementById('moreBody');
+  const arrow = document.getElementById('moreArrow');
+  if (moreExpanded) {
+    body.classList.add('show');
+    arrow.textContent = '收起 ▲';
+    arrow.classList.add('expanded');
+  } else {
+    body.classList.remove('show');
+    arrow.textContent = '展开 ▼';
+    arrow.classList.remove('expanded');
+  }
+}
+
+function setRadio(el, group, value) {
+  const parent = el.parentElement;
+  parent.querySelectorAll('.radio-option').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  if (group === 'scope') formState.scope = value;
+  if (group === 'mode') formState.mode = value;
+}
+
+function togglePush() {
+  formState.pushOn = !formState.pushOn;
+  const toggle = document.getElementById('pushToggle');
+  toggle.classList.toggle('on', formState.pushOn);
+}
+
+
+// ============================================================
+// 保存 & 返回
+// ============================================================
+function saveSubscription() {
+  showToast('保存成功！');
+  console.log('表单数据:', JSON.parse(JSON.stringify(formState)));
+  setTimeout(() => goBack(), 800);
+}
+
+function goBack() {
+  // 返回上一页
+  if (window.history.length > 1) window.history.back();
+  else window.location.href = 'approval-mobile.html';
+}
+
+
+// ============================================================
+// Toast
+// ============================================================
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => el.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>

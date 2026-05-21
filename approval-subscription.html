@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>添加审批订阅</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px; color: #333; background: #f5f6fa; min-height: 100vh;
+    }
+
+    /* Layout */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 180px; min-width: 180px;
+      background: #fff; border-right: 1px solid #eee;
+      display: flex; flex-direction: column;
+    }
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 8px;
+      padding: 18px 16px 14px; border-bottom: 1px solid #f0f0f0;
+    }
+    .logo-icon {
+      width: 34px; height: 34px; background: #ff7b00; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 16px; font-weight: 700;
+    }
+    .logo-text { font-size: 15px; font-weight: 600; color: #222; }
+    .sidebar-nav { padding: 8px 0; flex: 1; }
+    .nav-group-title { font-size: 12px; color: #999; padding: 10px 16px 4px; letter-spacing: 0.5px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 8px; padding: 9px 16px;
+      cursor: pointer; color: #555; font-size: 13.5px;
+      transition: all .15s; position: relative;
+    }
+    .nav-item:hover { background: #fff6ef; color: #ff7b00; }
+    .nav-item.active { background: #fff6ef; color: #ff7b00; font-weight: 600; }
+    .nav-item.active::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: #ff7b00; border-radius: 0 2px 2px 0;
+    }
+    .nav-icon { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Main */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar {
+      height: 52px; background: #fff; border-bottom: 1px solid #eee;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+    }
+    .tabs { display: flex; gap: 0; align-items: center; }
+    .tab {
+      padding: 6px 14px; font-size: 13px; color: #666; cursor: pointer;
+      border-radius: 4px 4px 0 0; border: 1px solid transparent; border-bottom: none;
+      display: flex; align-items: center; gap: 6px; transition: all .15s;
+    }
+    .tab:hover { color: #ff7b00; }
+    .tab.active { background: #fff6ef; border-color: #ffd6a8; color: #ff7b00; font-weight: 600; }
+    .tab-close { font-size: 11px; opacity: .6; padding: 1px 2px; border-radius: 2px; }
+    .tab-close:hover { opacity: 1; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .badge-enterprise { background: #ff7b00; color: #fff; font-size: 12px; padding: 3px 10px; border-radius: 4px; font-weight: 500; }
+    .user-avatar { width: 28px; height: 28px; background: #ffd6a8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #ff7b00; font-weight: 600; }
+
+    /* Content */
+    .content { flex: 1; padding: 20px 24px; overflow-y: auto; }
+    .card { background: #fff; border-radius: 8px; border: 1px solid #f0f0f0; padding: 28px 32px 24px; max-width: 900px; }
+    .card-title { font-size: 16px; font-weight: 600; color: #222; padding-left: 12px; border-left: 3px solid #ff7b00; margin-bottom: 24px; }
+
+    /* Form base */
+    .form-row { display: flex; align-items: flex-start; margin-bottom: 18px; }
+    .form-label {
+      width: 90px; min-width: 90px; font-size: 13.5px; color: #555;
+      padding-top: 8px; text-align: right; padding-right: 14px; line-height: 1.4;
+    }
+    .form-label.required::before { content: '* '; color: #f03e3e; }
+    .form-control { flex: 1; }
+    .form-divider { border: none; border-top: 1px dashed #f0f0f0; margin: 6px 0 18px; }
+    .form-row-cols { display: flex; align-items: flex-start; margin-bottom: 18px; gap: 24px; flex-wrap: wrap; }
+    .form-col { display: flex; align-items: center; gap: 0; flex: 1; min-width: 280px; }
+
+    /* ===== 关键词行：标签 + 输入框 + 添加按钮 + 提示 ===== */
+    .keyword-line {
+      display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
+    }
+    .keyword-tags-box {
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+      min-height: 36px;
+    }
+    .keyword-inline-tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      height: 26px; padding: 0 8px;
+      background: #fff6ef; color: #ff7b00; border: 1px solid #ffd6a8;
+      border-radius: 3px; font-size: 12.5px; white-space: nowrap;
+    }
+    .inline-tag-close {
+      cursor: pointer; opacity: .6; font-size: 10px; line-height: 1;
+      padding: 0 1px; transition: opacity .15s;
+    }
+    .inline-tag-close:hover { opacity: 1; }
+    .kw-input-field {
+      width: 200px; height: 34px; border: 1px solid #ddd; border-radius: 4px;
+      padding: 0 10px; font-size: 13px; color: #333; outline: none;
+      transition: border-color .15s; background: #fff; flex-shrink: 0;
+    }
+    .kw-input-field:focus { border-color: #ff7b00; box-shadow: 0 0 0 2px rgba(255,123,0,.1); }
+    .kw-input-field::placeholder { color: #bbb; }
+    .btn-add {
+      height: 30px; padding: 0 14px;
+      background: #fff; border: 1px solid #ff7b00; color: #ff7b00;
+      border-radius: 4px; font-size: 12.5px; cursor: pointer; transition: all .15s; flex-shrink: 0;
+    }
+    .btn-add:hover { background: #fff6ef; }
+    .input-hint { font-size: 12px; color: #999; white-space: nowrap; flex-shrink: 0; }
+
+    /* ===== 排除词行 ===== */
+    .exclude-line {
+      display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;
+    }
+    .exclude-input-field {
+      width: 220px; height: 34px; border: 1px solid #ddd; border-radius: 4px;
+      padding: 0 10px; font-size: 13px; color: #333; outline: none;
+      transition: border-color .15s; background: #fff; flex-shrink: 0;
+    }
+    .exclude-input-field:focus { border-color: #ff7b00; box-shadow: 0 0 0 2px rgba(255,123,0,.1); }
+    .exclude-input-field::placeholder { color: #bbb; }
+
+    /* Tags区域 - 推荐/同行关键词 */
+    .tags-bar {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      margin-top: 12px; padding: 10px 14px; background: #fafafa; border-radius: 4px;
+    }
+    .tag-label { font-size: 12.5px; color: #888; margin-right: 4px; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 26px; padding: 0 10px; border-radius: 4px;
+      font-size: 12.5px; cursor: pointer; transition: all .15s;
+    }
+    .tag-suggest { background: #fff; color: #555; border: 1px solid #e0e0e0; }
+    .tag-suggest:hover { background: #fff6ef; border-color: #ff7b00; color: #ff7b00; }
+    .tag-suggest.tag-used { background: #fff6ef; border-color: #ff7b00; color: #ff7b00; }
+    .tag-peer { background: #e8f4ff; color: #1890ff; border: 1px solid #b3d9ff; }
+    .tag-peer:hover { background: #d0eaff; }
+    .tag-peer.tag-used { background: #fff6ef; color: #ff7b00; border: 1px solid #ffd6a8; }
+    .btn-refresh {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12.5px; color: #ff7b00; cursor: pointer;
+      padding: 3px 6px; border-radius: 4px; border: none; background: none; transition: background .15s;
+    }
+    .btn-refresh:hover { background: #fff6ef; }
+    .refresh-icon { display: inline-block; transition: transform .3s; }
+    .btn-refresh:hover .refresh-icon { transform: rotate(180deg); }
+
+    /* Select */
+    .select-wrap { position: relative; display: inline-block; }
+    .form-select {
+      height: 36px; border: 1px solid #ddd; border-radius: 4px;
+      padding: 0 32px 0 12px; font-size: 13px; color: #333; background: #fff;
+      outline: none; appearance: none; cursor: pointer; transition: border-color .15s; min-width: 160px;
+    }
+    .form-select:focus { border-color: #ff7b00; box-shadow: 0 0 0 2px rgba(255,123,0,.1); }
+    .select-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #aaa; font-size: 11px; }
+
+    /* ===== 二级筛选触发器 ===== */
+    .cascader-trigger {
+      display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px;
+      min-height: 36px; min-width: 140px; max-width: 100%;
+      border: 1px solid #ddd; border-radius: 4px; padding: 4px 32px 4px 8px;
+      cursor: pointer; background: #fff; position: relative; transition: border-color .15s;
+      user-select: none;
+    }
+    .cascader-trigger:hover, .cascader-trigger.open { border-color: #ff7b00; }
+    .cascader-tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      height: 22px; padding: 0 6px;
+      background: #fff6ef; color: #ff7b00; border: 1px solid #ffd6a8;
+      border-radius: 3px; font-size: 12px; white-space: nowrap;
+    }
+    .cascader-tag-close { cursor: pointer; opacity: .6; font-size: 10px; }
+    .cascader-tag-close:hover { opacity: 1; }
+    .cascader-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 11px; pointer-events: none; }
+
+    /* ===== 二级弹窗 ===== */
+    .cascader-overlay {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+    }
+    .cascader-overlay.open { display: block; }
+    .cascader-panel {
+      position: absolute; background: #fff; border: 1px solid #e8e8e8;
+      border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.12);
+      overflow: hidden; min-width: 520px;
+    }
+    .cascader-body { display: flex; }
+    .cascader-left {
+      width: 200px; border-right: 1px solid #f0f0f0;
+      overflow-y: auto; max-height: 280px;
+    }
+    .cascader-right { width: 220px; overflow-y: auto; max-height: 280px; padding: 4px 0; }
+    .cascader-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; cursor: pointer; font-size: 13px; color: #333; transition: background .12s;
+    }
+    .cascader-item:hover, .cascader-item.hovered { background: #fff6ef; }
+    .cascader-item-left { display: flex; align-items: center; gap: 8px; }
+    .cascader-item-arrow { color: #ccc; font-size: 11px; }
+    .cascader-item.hovered .cascader-item-arrow { color: #ff7b00; }
+    .cascader-right-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 14px; cursor: pointer; font-size: 13px; color: #333; transition: background .12s;
+    }
+    .cascader-right-item:hover { background: #fff6ef; }
+
+    /* 自定义 checkbox */
+    .cb {
+      width: 16px; height: 16px; flex-shrink: 0; border-radius: 3px;
+      border: 1.5px solid #ddd; background: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all .15s; cursor: pointer;
+    }
+    .cb.checked { background: #ff7b00; border-color: #ff7b00; }
+    .cb.indeterminate { background: #ff7b00; border-color: #ff7b00; }
+    .cb.checked::after { content: ''; display: block; width: 4px; height: 7px; border: 2px solid #fff; border-top: none; border-left: none; transform: rotate(45deg) translate(-1px,-1px); }
+    .cb.indeterminate::after { content: ''; display: block; width: 8px; height: 2px; background: #fff; border-radius: 1px; }
+
+    /* 弹窗底部 */
+    .cascader-footer {
+      display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+      padding: 10px 14px; border-top: 1px solid #f0f0f0;
+    }
+    .cascader-btn {
+      height: 30px; padding: 0 16px; border-radius: 4px;
+      font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #666;
+      transition: all .15s;
+    }
+    .cascader-btn:hover { border-color: #aaa; color: #333; }
+    .cascader-btn-primary { background: #ff7b00; border-color: #ff7b00; color: #fff; }
+    .cascader-btn-primary:hover { background: #e06e00; }
+    .cascader-btn-reset { background: #fff; border-color: #ff7b00; color: #ff7b00; }
+    .cascader-btn-reset:hover { background: #fff6ef; }
+
+    /* ===== 订阅推送 (拟建样式) ===== */
+    .toggle { position: relative; width: 44px; height: 22px; display: inline-block; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: #ddd; border-radius: 22px; transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute; width: 18px; height: 18px;
+      left: 2px; top: 2px; background: #fff; border-radius: 50%;
+      transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .toggle input:checked + .toggle-slider { background: #52c41a; }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(22px); }
+    .push-row { display: flex; align-items: center; gap: 8px; }
+    .push-status { font-size: 13.5px; font-weight: 500; }
+    .push-status.on { color: #52c41a; }
+    .push-status.off { color: #999; }
+    .push-freq-hint { font-size: 12.5px; color: #999; }
+
+    /* Footer */
+    .form-footer {
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      padding-top: 24px; border-top: 1px solid #f0f0f0; margin-top: 8px;
+    }
+    .btn {
+      height: 36px; padding: 0 22px; border-radius: 4px; font-size: 13.5px;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid transparent; transition: all .15s; font-weight: 500;
+    }
+    .btn-reset { background: #fff; border-color: #ddd; color: #666; }
+    .btn-reset:hover { border-color: #aaa; color: #333; }
+    .btn-cancel { background: #fff; border-color: #ddd; color: #666; }
+    .btn-cancel:hover { border-color: #aaa; color: #333; }
+    .btn-save { background: #ff7b00; border-color: #ff7b00; color: #fff; }
+    .btn-save:hover { background: #e06e00; border-color: #e06e00; }
+    .btn-save:active { background: #c96200; }
+
+    /* Tooltip */
+    .tooltip-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 15px; height: 15px; background: #ccc; border-radius: 50%;
+      font-size: 10px; color: #fff; cursor: help; margin-left: 3px; vertical-align: middle;
+    }
+    .tooltip-icon:hover { background: #999; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">标</div>
+      <div class="logo-text">喜鹊招标</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-title">订阅中心</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M5 7h6M5 9.5h4"/></svg>
+        <span>前期商机订阅</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h10M8 3l5 5-5 5"/></svg>
+        <span>实时招标订阅</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5"/><path d="M8 5.5v2.5l2 1.5"/></svg>
+        <span>中标结果订阅</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8v2H4zM2 5h12l-1 9H3L2 5z"/><path d="M6 8v4M10 8v4"/></svg>
+        <span>拟建项目订阅</span>
+      </div>
+      <div class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2a2 2 0 0 1 2 2v1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h2V4a2 2 0 0 1 2-2z"/><path d="M6 9l1.5 1.5L10 7"/></svg>
+        <span>审批订阅</span>
+      </div>
+      <div class="nav-group-title" style="margin-top:8px;">信息查询</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4"/><path d="M10.5 10.5l2.5 2.5"/></svg>
+        <span>信息查询</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5.5" height="5.5" rx="1"/><rect x="8.5" y="2" width="5.5" height="5.5" rx="1"/><rect x="2" y="8.5" width="5.5" height="5.5" rx="1"/><rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1"/></svg>
+        <span>查企业</span>
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13V5l6-3 6 3v8M6 13V9h4v4"/></svg>
+        <span>数据导出</span>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="tabs">
+        <div class="tab"><span>实时招标订阅</span><span class="tab-close">✕</span></div>
+        <div class="tab"><span>信息查询</span><span class="tab-close">✕</span></div>
+        <div class="tab active"><span>审批订阅</span><span class="tab-close">✕</span></div>
+      </div>
+      <div class="topbar-right">
+        <span class="badge-enterprise">企业会员</span>
+        <div class="user-avatar">鹿</div>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="#aaa"><path d="M2 4l4 4 4-4"/></svg>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="card">
+        <div class="card-title">添加审批订阅</div>
+
+        <!-- 关键词 -->
+        <div class="form-row">
+          <div class="form-label required">关键词：</div>
+          <div class="form-control">
+            <!-- 第一行：标签 + 输入框 + 添加 + 提示 -->
+            <div class="keyword-line" id="keywordLine">
+              <div class="keyword-tags-box" id="keywordTagsBox"></div>
+              <input type="text" class="kw-input-field" id="keywordInput"
+                placeholder="请输入关键词(20字以内)" maxlength="20" />
+              <button class="btn-add" onclick="addKeyword()">添加</button>
+              <span class="input-hint" id="keywordCount">可添加 0/15 个关键词</span>
+            </div>
+
+            <!-- 推荐关键词 (未添加关键词时显示) -->
+            <div class="tags-bar" id="suggestWrap">
+              <span class="tag-label">推荐关键词：</span>
+              <span class="tag tag-suggest" onclick="addSuggestTag(this)">政府采购</span>
+              <span class="tag tag-suggest" onclick="addSuggestTag(this)">工程承包</span>
+              <span class="tag tag-suggest" onclick="addSuggestTag(this)">信息系统</span>
+              <span class="tag tag-suggest" onclick="addSuggestTag(this)">安全审批</span>
+              <span class="tag tag-suggest" onclick="addSuggestTag(this)">审批服务</span>
+              <button class="btn-refresh" onclick="refreshSuggests()">
+                <span class="refresh-icon">↺</span> 换一批
+              </button>
+            </div>
+
+            <!-- 同行订阅的关键词 (添加关键词后显示，替代推荐关键词) -->
+            <div class="tags-bar" id="peerKeywordsWrap" style="display:none;">
+              <span class="tag-label">同行订阅的关键词：</span>
+              <span class="tag tag-peer" onclick="addPeerTag(this)">政务审批</span>
+              <span class="tag tag-peer" onclick="addPeerTag(this)">行政审批</span>
+              <span class="tag tag-peer" onclick="addPeerTag(this)">项目审批</span>
+              <span class="tag tag-peer" onclick="addPeerTag(this)">合规审批</span>
+              <span class="tag tag-peer" onclick="addPeerTag(this)">立项申请</span>
+              <button class="btn-refresh" onclick="refreshPeers()">
+                <span class="refresh-icon">↺</span> 换一批
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <hr class="form-divider" />
+
+        <!-- 排除词 -->
+        <div class="form-row">
+          <div class="form-label">
+            排除词
+            <span class="tooltip-icon" title="添加排除词后，包含该词的项目将不会出现在搜索结果中">?</span>：
+          </div>
+          <div class="form-control">
+            <div class="exclude-line">
+              <input type="text" class="exclude-input-field" id="excludeInput"
+                placeholder="请输入排除词(20字以内)" maxlength="20" />
+              <button class="btn-add" onclick="addExclude()">添加</button>
+              <span class="input-hint" id="excludeCount">可添加 0/15 个排除词</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="form-divider" />
+
+        <!-- 搜索范围 + 搜索模式 -->
+        <div class="form-row-cols">
+          <div class="form-col">
+            <div class="form-label required" style="white-space:nowrap;">搜索范围：</div>
+            <div class="select-wrap">
+              <select class="form-select" id="searchScope">
+                <option value="full">全文搜索</option>
+                <option value="title">标题搜索</option>
+                <option value="purchase">采购内容搜索</option>
+              </select>
+              <span class="select-arrow">▾</span>
+            </div>
+          </div>
+          <div class="form-col">
+            <div class="form-label required" style="white-space:nowrap;">搜索模式：</div>
+            <div class="select-wrap">
+              <select class="form-select" id="searchMode">
+                <option value="precise">精准搜索</option>
+                <option value="smart">智能搜索</option>
+                <option value="fuzzy">模糊搜索</option>
+              </select>
+              <span class="select-arrow">▾</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 项目地区 + 项目阶段 -->
+        <div class="form-row-cols">
+          <div class="form-col" style="align-items:flex-start; padding-top:0;">
+            <div class="form-label required" style="white-space:nowrap; padding-top:8px;">项目地区：</div>
+            <div>
+              <div class="cascader-trigger" id="regionTrigger" onclick="openCascader('region')">
+                <span class="cascader-tag" id="regionTagAll">
+                  全国
+                  <span class="cascader-tag-close" onclick="event.stopPropagation(); clearCascader('region')">✕</span>
+                </span>
+                <span class="cascader-arrow">▾</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-col" style="align-items:flex-start; padding-top:0;">
+            <div class="form-label required" style="white-space:nowrap; padding-top:8px;">项目阶段：</div>
+            <div>
+              <div class="cascader-trigger" id="stageTrigger" onclick="openCascader('stage')">
+                <span class="cascader-tag" id="stageTagAll">
+                  全部阶段
+                  <span class="cascader-tag-close" onclick="event.stopPropagation(); clearCascader('stage')">✕</span>
+                </span>
+                <span class="cascader-arrow">▾</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 项目行业 (全宽) -->
+        <div class="form-row">
+          <div class="form-label required" style="padding-top:8px;">项目行业：</div>
+          <div class="form-control">
+            <div class="cascader-trigger" id="industryTrigger" style="width:100%;max-width:720px;" onclick="openCascader('industry')">
+              <span class="cascader-tag" id="industryTagAll">
+                全部行业
+                <span class="cascader-tag-close" onclick="event.stopPropagation(); clearCascader('industry')">✕</span>
+              </span>
+              <span class="cascader-arrow">▾</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="form-divider" />
+
+        <!-- 订阅推送 (拟建样式) -->
+        <div class="form-row">
+          <div class="form-label">订阅推送：</div>
+          <div class="form-control">
+            <div class="push-row">
+              <label class="toggle">
+                <input type="checkbox" checked id="pushToggle" onchange="updatePushStatus()" />
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="push-status on" id="pushStatusText">开启</span>
+              <span class="push-freq-hint" id="pushFreqHint">（推送频率：每天）</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="form-footer">
+          <button class="btn btn-reset" onclick="resetForm()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 8a6 6 0 1 1 2 4.5"/><path d="M2 4v4h4"/></svg>
+            重置
+          </button>
+          <button class="btn btn-cancel" onclick="handleCancel()">取消</button>
+          <button class="btn btn-save" onclick="handleSave()">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 13H3a1 1 0 0 1-1-1V4l3-3h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1z"/><path d="M5 1v4h6V1M5 9h6v4H5z"/></svg>
+            保存
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 地区二级弹窗 ===== -->
+<div class="cascader-overlay" id="regionOverlay" onclick="closeCascader('region')">
+  <div class="cascader-panel" id="regionPanel" onclick="event.stopPropagation()">
+    <div class="cascader-body">
+      <div class="cascader-left" id="regionLeft"></div>
+      <div class="cascader-right" id="regionRight"></div>
+    </div>
+    <div class="cascader-footer">
+      <button class="cascader-btn" onclick="closeCascader('region')">取消</button>
+      <button class="cascader-btn cascader-btn-primary" onclick="confirmCascader('region')">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 项目阶段二级弹窗 ===== -->
+<div class="cascader-overlay" id="stageOverlay" onclick="closeCascader('stage')">
+  <div class="cascader-panel" id="stagePanel" onclick="event.stopPropagation()">
+    <div class="cascader-body">
+      <div class="cascader-left" id="stageLeft"></div>
+      <div class="cascader-right" id="stageRight"></div>
+    </div>
+    <div class="cascader-footer">
+      <button class="cascader-btn" onclick="closeCascader('stage')">取消</button>
+      <button class="cascader-btn cascader-btn-reset" onclick="resetCascaderPanel('stage')">重置</button>
+      <button class="cascader-btn cascader-btn-primary" onclick="confirmCascader('stage')">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 行业二级弹窗 ===== -->
+<div class="cascader-overlay" id="industryOverlay" onclick="closeCascader('industry')">
+  <div class="cascader-panel" id="industryPanel" onclick="event.stopPropagation()">
+    <div class="cascader-body">
+      <div class="cascader-left" id="industryLeft"></div>
+      <div class="cascader-right" id="industryRight"></div>
+    </div>
+    <div class="cascader-footer">
+      <button class="cascader-btn" onclick="closeCascader('industry')">取消</button>
+      <button class="cascader-btn cascader-btn-reset" onclick="resetCascaderPanel('industry')">重置</button>
+      <button class="cascader-btn cascader-btn-primary" onclick="confirmCascader('industry')">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:#333;color:#fff;border-radius:6px;padding:10px 20px;font-size:13px;opacity:0;transition:all .3s;pointer-events:none;z-index:9999;white-space:nowrap;"></div>
+
+<script>
+// ===================================================
+// 数据
+// ===================================================
+const REGION_DATA = [
+  { label: '全国', children: [] },
+  { label: '北京', children: ['东城区','西城区','朝阳区','海淀区','丰台区','石景山区'] },
+  { label: '广东', children: ['广州市','深圳市','佛山市','东莞市','珠海市','惠州市','汕头市'] },
+  { label: '海南', children: ['海口市','三亚市','儋州市','文昌市','万宁市'] },
+  { label: '广西', children: ['南宁市','柳州市','桂林市','梧州市','北海市'] },
+  { label: '天津', children: ['和平区','河东区','河西区','南开区','河北区','红桥区'] },
+  { label: '河北', children: ['石家庄市','唐山市','秦皇岛市','邯郸市','保定市','沧州市'] },
+  { label: '山西', children: ['太原市','大同市','朔州市','忻州市','吕梁市'] },
+  { label: '上海', children: ['黄浦区','徐汇区','长宁区','静安区','普陀区','虹口区','杨浦区'] },
+  { label: '浙江', children: ['杭州市','宁波市','温州市','绍兴市','嘉兴市','湖州市'] },
+  { label: '江苏', children: ['南京市','苏州市','无锡市','常州市','南通市','扬州市'] },
+  { label: '四川', children: ['成都市','绵阳市','德阳市','宜宾市','泸州市','乐山市'] },
+  { label: '湖北', children: ['武汉市','宜昌市','襄阳市','荆州市','黄石市'] },
+  { label: '山东', children: ['济南市','青岛市','烟台市','潍坊市','淄博市','济宁市'] },
+];
+
+const STAGE_DATA = [
+  { label: '全部阶段', children: [] },
+  { label: '工程筹备', children: ['立项申报','可研编制','选址规划','环评准备'] },
+  { label: '债券发行', children: ['债券立项','尽职调查','债券发行','资金拨付'] },
+  { label: '设计阶段', children: ['方案设计','初步设计','施工图设计','专项设计'] },
+  { label: '施工准备', children: ['施工许可','临时设施','场地平整','施工招标'] },
+  { label: '总承包', children: ['EPC招标','总包合同','分包管理','进度控制'] },
+  { label: '施工在建', children: ['土方工程','主体结构','机电安装','装饰装修','竣工验收'] },
+  { label: '装饰装修', children: ['室内装饰','外立面装饰','智能化装修','园林景观'] },
+];
+
+const INDUSTRY_DATA = [
+  { label: '全部行业', children: [] },
+  { label: '建筑工程', children: ['房屋建筑','基础设施','工业建筑','装配式建筑','绿色建筑'] },
+  { label: '能源工业', children: ['火力发电','水力发电','风力发电','光伏发电','核能利用','油气开采'] },
+  { label: '制造业', children: ['汽车制造','电子信息','机械装备','化工原料','新材料','航空航天'] },
+  { label: '仓储物流', children: ['货运物流','冷链仓储','电商仓储','智慧物流','港口码头'] },
+  { label: '市政工程', children: ['道路工程','桥梁工程','管网工程','公共服务设施','城市绿化'] },
+  { label: '交通工程', children: ['铁路建设','轨道交通','高速公路','港口航道','航空工程'] },
+  { label: '农林水利', children: ['农田水利','水利枢纽','防洪治涝','农业综合开发','林业建设'] },
+  { label: '医疗卫生', children: ['医院建设','公共卫生','医疗设备','健康管理'] },
+  { label: '教育科技', children: ['学校建设','科研设施','实验室','职业教育'] },
+  { label: '信息技术', children: ['软件开发','数字政务','云计算','人工智能','数据中心'] },
+];
+
+// ===================================================
+// 关键词 state
+// ===================================================
+let keywords = [];
+let excludes = [];
+const MAX_KW = 15;
+
+const suggestPools = [
+  ['政府采购','工程承包','信息系统','安全审批','审批服务'],
+  ['行政许可','建设审批','规划许可','施工申请','环评审批'],
+  ['数字政务','智慧城市','园区建设','市政工程','公共服务'],
+];
+let suggestPoolIdx = 0;
+
+const peerPools = [
+  ['政务审批','行政审批','项目审批','合规审批','立项申请'],
+  ['规划审批','用地审批','环保审批','消防验收','人防审批'],
+  ['施工许可','竣工验收','备案登记','资质审批','招投标'],
+];
+let peerPoolIdx = 0;
+
+document.getElementById('keywordInput').addEventListener('keydown', e => { if (e.key === 'Enter') addKeyword(); });
+document.getElementById('excludeInput').addEventListener('keydown', e => { if (e.key === 'Enter') addExclude(); });
+
+function addKeyword() {
+  const input = document.getElementById('keywordInput');
+  const val = input.value.trim();
+  if (!val) { showToast('请输入关键词'); return; }
+  if (keywords.includes(val)) { showToast('关键词已存在'); return; }
+  if (keywords.length >= MAX_KW) { showToast('最多添加 ' + MAX_KW + ' 个关键词'); return; }
+  keywords.push(val);
+  input.value = '';
+  renderKeywords();
+}
+
+function removeKeyword(val) {
+  keywords = keywords.filter(k => k !== val);
+  // 恢复标签样式
+  document.querySelectorAll('.tag-suggest, .tag-peer').forEach(el => {
+    if (el.dataset.val === val) el.classList.remove('tag-used');
+  });
+  renderKeywords();
+}
+
+function renderKeywords() {
+  const box = document.getElementById('keywordTagsBox');
+  box.innerHTML = '';
+  keywords.forEach(kw => {
+    const tag = document.createElement('span');
+    tag.className = 'keyword-inline-tag';
+    tag.innerHTML = kw + '<span class="inline-tag-close" onclick="removeKeyword(\'' + escapeHtml(kw) + '\')">✕</span>';
+    box.appendChild(tag);
+  });
+  document.getElementById('keywordCount').textContent = '可添加 ' + keywords.length + '/' + MAX_KW + ' 个关键词';
+
+  // 互斥切换：有关键词显示同行词，无关键词显示推荐词
+  const suggestWrap = document.getElementById('suggestWrap');
+  const peerWrap = document.getElementById('peerKeywordsWrap');
+  if (keywords.length > 0) {
+    suggestWrap.style.display = 'none';
+    peerWrap.style.display = '';
+  } else {
+    suggestWrap.style.display = '';
+    peerWrap.style.display = 'none';
+  }
+}
+
+function addExclude() {
+  const input = document.getElementById('excludeInput');
+  const val = input.value.trim();
+  if (!val) { showToast('请输入排除词'); return; }
+  if (excludes.includes(val)) { showToast('排除词已存在'); return; }
+  if (excludes.length >= MAX_KW) { showToast('最多添加 ' + MAX_KW + ' 个排除词'); return; }
+  excludes.push(val);
+  input.value = '';
+  document.getElementById('excludeCount').textContent = '可添加 ' + excludes.length + '/' + MAX_KW + ' 个排除词';
+  showToast('已添加排除词：' + val);
+}
+
+function addSuggestTag(el) {
+  const val = el.textContent.trim();
+  if (keywords.includes(val)) { showToast('关键词已存在'); return; }
+  if (keywords.length >= MAX_KW) { showToast('最多添加 ' + MAX_KW + ' 个关键词'); return; }
+  keywords.push(val);
+  el.dataset.val = val;
+  el.classList.add('tag-used');
+  renderKeywords();
+}
+
+function addPeerTag(el) {
+  const val = el.textContent.trim();
+  if (keywords.includes(val)) { showToast('关键词已存在'); return; }
+  if (keywords.length >= MAX_KW) { showToast('最多添加 ' + MAX_KW + ' 个关键词'); return; }
+  keywords.push(val);
+  el.dataset.val = val;
+  el.classList.add('tag-used');
+  renderKeywords();
+}
+
+function refreshSuggests() {
+  suggestPoolIdx = (suggestPoolIdx + 1) % suggestPools.length;
+  const pool = suggestPools[suggestPoolIdx];
+  const tags = document.querySelectorAll('#suggestWrap .tag-suggest');
+  tags.forEach((el, i) => {
+    if (pool[i]) { el.textContent = pool[i]; el.dataset.val = ''; el.classList.remove('tag-used'); }
+  });
+}
+
+function refreshPeers() {
+  peerPoolIdx = (peerPoolIdx + 1) % peerPools.length;
+  const pool = peerPools[peerPoolIdx];
+  const tags = document.querySelectorAll('#peerKeywordsWrap .tag-peer');
+  tags.forEach((el, i) => {
+    if (pool[i]) { el.textContent = pool[i]; el.dataset.val = ''; el.classList.remove('tag-used'); }
+  });
+}
+
+// ===================================================
+// 订阅推送
+// ===================================================
+function updatePushStatus() {
+  const checked = document.getElementById('pushToggle').checked;
+  const txt = document.getElementById('pushStatusText');
+  const hint = document.getElementById('pushFreqHint');
+  txt.textContent = checked ? '开启' : '关闭';
+  txt.className = 'push-status ' + (checked ? 'on' : 'off');
+  hint.style.display = checked ? '' : 'none';
+}
+
+// ===================================================
+// Cascader 二级选择器
+// ===================================================
+
+const cascaderState = {
+  region:   { all: true, selected: {} },
+  stage:    { all: true, selected: {} },
+  industry: { all: true, selected: {} },
+};
+let pendingState = {};
+let currentHoveredParent = {};
+
+function getDataByType(type) {
+  if (type === 'region') return REGION_DATA;
+  if (type === 'stage') return STAGE_DATA;
+  return INDUSTRY_DATA;
+}
+
+function openCascader(type) {
+  const st = cascaderState[type];
+  pendingState[type] = { all: st.all, selected: {} };
+  for (const k in st.selected) {
+    pendingState[type].selected[k] = new Set(st.selected[k]);
+  }
+  currentHoveredParent[type] = null;
+
+  const triggerEl = document.getElementById(type + 'Trigger');
+  const overlay = document.getElementById(type + 'Overlay');
+  const panel = document.getElementById(type + 'Panel');
+  overlay.classList.add('open');
+  triggerEl.classList.add('open');
+
+  const rect = triggerEl.getBoundingClientRect();
+  panel.style.left = rect.left + 'px';
+  panel.style.top = (rect.bottom + 4) + 'px';
+
+  renderCascaderLeft(type);
+  renderCascaderRight(type, null);
+}
+
+function closeCascader(type) {
+  document.getElementById(type + 'Overlay').classList.remove('open');
+  document.getElementById(type + 'Trigger').classList.remove('open');
+}
+
+function confirmCascader(type) {
+  cascaderState[type] = { all: pendingState[type].all, selected: {} };
+  for (const k in pendingState[type].selected) {
+    cascaderState[type].selected[k] = new Set(pendingState[type].selected[k]);
+  }
+  closeCascader(type);
+  renderTriggerTags(type);
+}
+
+function resetCascaderPanel(type) {
+  pendingState[type] = { all: true, selected: {} };
+  renderCascaderLeft(type);
+  renderCascaderRight(type, null);
+}
+
+function clearCascader(type) {
+  cascaderState[type] = { all: true, selected: {} };
+  renderTriggerTags(type);
+}
+
+function renderTriggerTags(type) {
+  const st = cascaderState[type];
+  const trigger = document.getElementById(type + 'Trigger');
+  trigger.querySelectorAll('.cascader-tag').forEach(el => el.remove());
+
+  const allLabel = type === 'region' ? '全国' : type === 'stage' ? '全部阶段' : '全部行业';
+
+  if (st.all) {
+    const tag = document.createElement('span');
+    tag.className = 'cascader-tag';
+    tag.id = type + 'TagAll';
+    tag.innerHTML = allLabel + ' <span class="cascader-tag-close" onclick="event.stopPropagation();clearCascader(\'' + type + '\')">✕</span>';
+    trigger.insertBefore(tag, trigger.querySelector('.cascader-arrow'));
+    return;
+  }
+
+  let count = 0;
+  for (const k in st.selected) {
+    if (st.selected[k].size > 0) count += st.selected[k].size;
+    else count += 1;
+  }
+  if (count === 0) {
+    cascaderState[type].all = true;
+    renderTriggerTags(type);
+    return;
+  }
+
+  for (const parentLabel in st.selected) {
+    const children = st.selected[parentLabel];
+    const tag = document.createElement('span');
+    tag.className = 'cascader-tag';
+    let label = children.size > 0 ? parentLabel + '(' + children.size + ')' : parentLabel;
+    tag.innerHTML = label + ' <span class="cascader-tag-close" onclick="event.stopPropagation();removeParentSelection(\'' + type + '\',\'' + escapeHtml(parentLabel) + '\')">✕</span>';
+    trigger.insertBefore(tag, trigger.querySelector('.cascader-arrow'));
+  }
+}
+
+function removeParentSelection(type, parentLabel) {
+  delete cascaderState[type].selected[parentLabel];
+  const hasAny = Object.keys(cascaderState[type].selected).length > 0;
+  if (!hasAny) cascaderState[type].all = true;
+  renderTriggerTags(type);
+}
+
+function renderCascaderLeft(type) {
+  const data = getDataByType(type);
+  const container = document.getElementById(type + 'Left');
+  const pending = pendingState[type];
+  container.innerHTML = '';
+
+  data.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'cascader-item' + (currentHoveredParent[type] === item.label ? ' hovered' : '');
+
+    const isAll = idx === 0;
+    let cbClass = 'cb';
+    if (isAll) {
+      cbClass += pending.all ? ' checked' : '';
+    } else {
+      const sel = pending.selected[item.label];
+      if (sel) {
+        if (item.children.length === 0) {
+          cbClass += ' checked';
+        } else if (sel.size === item.children.length) {
+          cbClass += ' checked';
+        } else if (sel.size > 0) {
+          cbClass += ' indeterminate';
+        }
+      }
+    }
+
+    const arrow = item.children.length > 0
+      ? '<span class="cascader-item-arrow">▶</span>'
+      : '<span class="cascader-item-arrow" style="opacity:0">▶</span>';
+
+    div.innerHTML = '<div class="cascader-item-left"><span class="' + cbClass + '"></span><span>' + item.label + '</span></div>' + arrow;
+
+    div.addEventListener('click', () => toggleParent(type, item, idx));
+    div.addEventListener('mouseenter', () => {
+      currentHoveredParent[type] = item.label;
+      renderCascaderLeft(type);
+      renderCascaderRight(type, item.children.length > 0 ? item : null);
+    });
+
+    container.appendChild(div);
+  });
+}
+
+function toggleParent(type, item, idx) {
+  const pending = pendingState[type];
+  const isAll = idx === 0;
+
+  if (isAll) {
+    if (pending.all) {
+      pending.all = false;
+    } else {
+      pending.all = true;
+      pending.selected = {};
+    }
+  } else {
+    pending.all = false;
+    const sel = pending.selected[item.label];
+    if (sel !== undefined) {
+      delete pending.selected[item.label];
+    } else {
+      pending.selected[item.label] = item.children.length > 0
+        ? new Set(item.children)
+        : new Set();
+    }
+  }
+  renderCascaderLeft(type);
+  renderCascaderRight(type, item.children.length > 0 ? item : null);
+}
+
+function renderCascaderRight(type, parentItem) {
+  const container = document.getElementById(type + 'Right');
+  container.innerHTML = '';
+  if (!parentItem || parentItem.children.length === 0) return;
+
+  const pending = pendingState[type];
+  const selectedChildren = pending.selected[parentItem.label] || new Set();
+
+  parentItem.children.forEach(child => {
+    const div = document.createElement('div');
+    div.className = 'cascader-right-item';
+    const isChecked = selectedChildren.has(child);
+    const cbClass = 'cb' + (isChecked ? ' checked' : '');
+    div.innerHTML = '<span class="' + cbClass + '"></span><span>' + child + '</span>';
+    div.addEventListener('click', () => toggleChild(type, parentItem, child));
+    container.appendChild(div);
+  });
+}
+
+function toggleChild(type, parentItem, child) {
+  const pending = pendingState[type];
+  pending.all = false;
+  if (!pending.selected[parentItem.label]) {
+    pending.selected[parentItem.label] = new Set();
+  }
+  const sel = pending.selected[parentItem.label];
+  if (sel.has(child)) {
+    sel.delete(child);
+    if (sel.size === 0) delete pending.selected[parentItem.label];
+  } else {
+    sel.add(child);
+  }
+  renderCascaderLeft(type);
+  renderCascaderRight(type, parentItem);
+}
+
+// ===================================================
+// 表单操作
+// ===================================================
+function resetForm() {
+  keywords = []; excludes = [];
+  renderKeywords();
+  document.getElementById('keywordInput').value = '';
+  document.getElementById('excludeInput').value = '';
+  document.getElementById('searchScope').selectedIndex = 0;
+  document.getElementById('searchMode').selectedIndex = 0;
+  ['region','stage','industry'].forEach(t => {
+    cascaderState[t] = { all: true, selected: {} };
+    renderTriggerTags(t);
+  });
+  document.getElementById('pushToggle').checked = true;
+  updatePushStatus();
+  document.getElementById('excludeCount').textContent = '可添加 0/15 个排除词';
+  document.querySelectorAll('.tag-suggest, .tag-peer').forEach(el => { el.classList.remove('tag-used'); el.dataset.val = ''; });
+  showToast('已重置表单');
+}
+
+function handleCancel() {
+  if (confirm('确定要取消吗？未保存的内容将会丢失。')) {
+    window.location.href = 'approval-list.html';
+  }
+}
+
+function handleSave() {
+  if (keywords.length === 0) {
+    showToast('请至少添加一个关键词', true);
+    document.getElementById('keywordInput').focus();
+    return;
+  }
+  showToast('✓ 审批订阅保存成功！');
+  setTimeout(() => { window.location.href = 'approval-list.html'; }, 800);
+}
+
+// ===================================================
+// 工具函数
+// ===================================================
+function escapeHtml(s) {
+  return s.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+let toastTimer = null;
+function showToast(msg, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = isError ? '#f5222d' : '#333';
+  el.style.opacity = '1';
+  el.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 2500);
+}
+</script>
+</body>
+</html>
